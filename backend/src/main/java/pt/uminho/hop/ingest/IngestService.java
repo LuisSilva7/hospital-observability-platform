@@ -22,13 +22,16 @@ public class IngestService {
     private final MonitoredServiceRepository services;
     private final ServiceApiKeyRepository apiKeys;
     private final LogEventRepository logEvents;
+    private final pt.uminho.hop.rules.RuleEngine ruleEngine;
 
     public IngestService(MonitoredServiceRepository services,
                          ServiceApiKeyRepository apiKeys,
-                         LogEventRepository logEvents) {
+                         LogEventRepository logEvents,
+                         pt.uminho.hop.rules.RuleEngine ruleEngine) {
         this.services = services;
         this.apiKeys = apiKeys;
         this.logEvents = logEvents;
+        this.ruleEngine = ruleEngine;
     }
 
     @Transactional
@@ -62,6 +65,8 @@ public class IngestService {
         services.save(service);
         key.setLastUsedAt(now);
         apiKeys.save(key);
+
+        ruleEngine.evaluateOnIngest(serviceId, event.getId(), payload);
 
         return event;
     }

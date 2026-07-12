@@ -49,7 +49,7 @@ Health: `GET http://localhost:8080/api/health`. Config por env vars — ver `.en
 - [x] **M2 Ingestão** — `POST /api/v1/ingest/{serviceId}/logs` com X-API-Key (401 se inválida/em falta/de outro serviço/serviço inativo), payload JSONB preservado + campos normalizados (`LogNormalizer`: timestamp/level/message/eventType), atualiza lastSeenAt e lastUsedAt
 - [x] **M3 Simulador** — `simulator/` Node sem deps: `node setup.js` regista os 3 serviços demo e escreve `config.json` (gitignored, tem keys); `node index.js --scenario <perfil>=<normal|error-spike|latency|silence>`; perfis: laboratory/admissions/notifications
 - [x] **M4 Exploração** — `GET /api/logs` (filtros serviceId/level/text/from/to + paginação; text pesquisa message e payload via `@Formula payload::text`), `GET /api/overview`; estado derivado (`ServiceManager.deriveStatus`: INACTIVE/UNKNOWN/SILENT/HEALTHY); UI: Log Explorer com modal de payload + dashboard com cartões e lista de estado
-- [ ] **M5 Regras** — EVENT_MATCH, NO_ACTIVITY, COUNT_THRESHOLD; wizard na UI; cooldown
+- [x] **M5 Regras** — `RuleEngine` (EVENT_MATCH/COUNT_THRESHOLD avaliadas na ingestão; NO_ACTIVITY via `@Scheduled` 30s) + `ConditionMatcher` (EQUALS/NOT_EQUALS/CONTAINS/GT/LT, fieldPath aninhado com "."); cooldown por regra; disparos registados em `rule_evaluation`; interface `RuleTriggerHandler` é o hook para M6/M7; CRUD `/api/rules` + wizard 4 passos na UI + detalhe com histórico
 - [ ] **M6 Alertas** — OPEN/ACKNOWLEDGED/RESOLVED, timeline, logs associados
 - [ ] **M7 Automações** — webhook + n8n, executor assíncrono, retries, histórico
 - [ ] **M8 IA** — "Analisar com IA": resumo, causa provável, evidências, recomendações (interface abstrata de LLM; provider Anthropic)
