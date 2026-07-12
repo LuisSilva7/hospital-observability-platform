@@ -61,6 +61,7 @@ cd backend && ./mvnw test   # requer o PostgreSQL do docker compose a correr
 - ✅ Módulo 1 — Gestão de serviços monitorizados (CRUD, API keys com hash, endpoint de ingestão copiável)
 - ✅ Módulo 2 — Ingestão e normalização de logs (X-API-Key, payload JSONB preservado)
 - ✅ Módulo 3 — Simulador de serviços (3 perfis, cenários normal/error-spike/latency/silence — ver `simulator/README.md`)
-- ⏳ Módulo 4 — Exploração de logs e visão geral (próximo)
+- ✅ Módulo 4 — Log Explorer (filtros, pesquisa, paginação, payload original) e dashboard com estado dos serviços
+- ⏳ Módulo 5 — Monitores e regras configuráveis (próximo)
 
 Roadmap completo em [CLAUDE.md](CLAUDE.md) e em `docs/documento-visao.txt`.

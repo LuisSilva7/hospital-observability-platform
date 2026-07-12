@@ -36,6 +36,10 @@ public class LogEvent {
     @Column(nullable = false, columnDefinition = "jsonb")
     private String payload;
 
+    // Projeção do JSONB como texto, para pesquisa livre (LIKE) sem lower(jsonb)
+    @org.hibernate.annotations.Formula("payload::text")
+    private String payloadText;
+
     public UUID getId() { return id; }
     public UUID getServiceId() { return serviceId; }
     public void setServiceId(UUID serviceId) { this.serviceId = serviceId; }

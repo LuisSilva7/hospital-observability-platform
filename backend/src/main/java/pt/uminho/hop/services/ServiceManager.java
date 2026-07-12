@@ -124,9 +124,26 @@ public class ServiceManager {
         service.setToleranceMinutes(request.toleranceMinutes());
     }
 
+    /**
+     * Deriva o estado do serviço a partir do último log recebido e do
+     * intervalo esperado: INACTIVE (desativado), UNKNOWN (nunca recebeu),
+     * SILENT (sem logs há mais de intervalo+tolerância) ou HEALTHY.
+     */
+    public static String deriveStatus(MonitoredService s, java.time.OffsetDateTime now) {
+        if (!s.isActive()) return "INACTIVE";
+        if (s.getLastSeenAt() == null) return "UNKNOWN";
+        if (s.getExpectedIntervalMinutes() != null) {
+            long allowedMinutes = s.getExpectedIntervalMinutes()
+                    + (s.getToleranceMinutes() == null ? 0 : s.getToleranceMinutes());
+            if (s.getLastSeenAt().plusMinutes(allowedMinutes).isBefore(now)) {
+                return "SILENT";
+            }
+        }
+        return "HEALTHY";
+    }
+
     private ServiceResponse toResponse(MonitoredService s, ServiceApiKey key) {
-        // Estado real (HEALTHY/SILENT/...) será derivado no Módulo 4; até lá:
-        String status = s.getLastSeenAt() == null ? "UNKNOWN" : "ACTIVE";
+        String status = deriveStatus(s, java.time.OffsetDateTime.now());
         return new ServiceResponse(
                 s.getId(), s.getName(), s.getDescription(), s.getEnvironment(),
                 s.getCriticality(), s.isActive(), s.getExpectedIntervalMinutes(),
