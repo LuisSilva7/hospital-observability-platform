@@ -1,0 +1,13 @@
+# Normalizar terminações de linha: LF no repositório
+* text=auto eol=lf
+
+# Scripts Windows precisam de CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binários
+*.pdf binary
+*.docx binary
+*.png binary
+*.ico binary
+*.jar binary

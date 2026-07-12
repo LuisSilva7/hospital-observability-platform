@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hop-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hop}
+      POSTGRES_USER: ${POSTGRES_USER:-hop}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hop}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hop} -d ${POSTGRES_DB:-hop}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: hop-n8n
+    environment:
+      N8N_PORT: 5678
+      N8N_SECURE_COOKIE: "false"
+      GENERIC_TIMEZONE: Europe/Lisbon
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n-data:/home/node/.n8n
+
+volumes:
+  postgres-data:
+  n8n-data:

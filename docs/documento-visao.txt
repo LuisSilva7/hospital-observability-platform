@@ -1,0 +1,443 @@
+
+DOCUMENTO DE VISÃOE ESPECIFICAÇÃO INICIAL
+Plataforma Configurável de Monitorização, Alertas, Automações e Insights de IA
+Projeto de dissertação: Monitorização Inteligente de Fluxos e Processos de Dados em Meio Hospitalar
+Finalidade
+Servir como briefing funcional e técnico para o Claude iniciar o desenvolvimento do protótipo de forma modular e incremental.
+Versão 1.0  |  julho de 2026
+
+Como utilizar este documento
+Este documento traduz a ideia da dissertação num produto implementável. Deve ser enviado ao Claude como contexto inicial. O desenvolvimento deve ser feito pela ordem indicada, validando cada módulo antes de avançar para o seguinte.
+Regra principal de desenvolvimento
+Não tentar construir a plataforma completa de uma vez. Primeiro entregar um MVP funcional ponta a ponta: criar serviço → receber logs → aplicar regra → criar alerta → executar automação → gerar insight de IA.
+
+Índice
+1. Contexto e problema do projeto
+2. Visão do produto e princípios
+3. Escopo do MVP
+4. Fluxo principal da aplicação
+5. Arquitetura técnica
+6. Módulos funcionais
+7. Modelo de dados inicial
+8. Contratos de API e exemplos
+9. Cenário de demonstração
+10. Plano de implementação
+11. Testes e avaliação
+12. Decisões e riscos
+13. Prompt inicial para o Claude
+
+1. Contexto e problema do projeto
+O projeto pretende desenvolver uma plataforma local para monitorizar eventos e logs produzidos por diferentes serviços hospitalares simulados. Os serviços enviam dados por HTTP, a plataforma armazena e apresenta esses dados, verifica condições definidas pelo utilizador e desencadeia alertas, automações e análises com inteligência artificial.
+O foco não é diagnóstico clínico nem gestão de pacientes. O foco é a monitorização técnica e operacional dos fluxos de dados entre serviços, permitindo detetar erros, ausência de atividade, padrões anómalos simples e incidentes operacionais.
+Problema central
+Os sistemas hospitalares são heterogéneos e produzem logs com formatos diferentes. A monitorização tende a ser dispersa e reativa. A plataforma deve fornecer um ponto único e configurável para receber eventos, visualizar o estado dos serviços, definir regras e automatizar respostas.
+
+1.1 Exemplo do problema
+Um serviço de laboratório envia regularmente logs de processamento. O utilizador quer receber uma mensagem quando:
+o serviço enviar um log com nível ERROR;
+não enviar qualquer log durante 10 minutos;
+enviar mais de 5 erros num período de 15 minutos.
+A plataforma deve permitir configurar estas condições sem alterar o código do backend.
+2. Visão do produto e princípios
+A aplicação será uma plataforma configurável de observabilidade simplificada. O utilizador regista os serviços que pretende monitorizar, recebe um endpoint e uma chave de acesso, envia logs em JSON, define regras e escolhe o que acontece quando uma condição é satisfeita.
+2.1 Utilizador-alvo
+Operador ou administrador técnico de sistemas hospitalares.
+Responsável por integrações, aplicações ou gestão de incidentes.
+Investigador que pretende simular e avaliar cenários de monitorização.
+2.2 Princípios de produto
+Princípio
+Aplicação no projeto
+Configurável
+Os serviços, intervalos, níveis, regras e ações são definidos pelo utilizador.
+Sem lógica específica de um serviço
+O backend não deve conter nomes ou regras fixas para laboratório, consultas ou faturação.
+Aceitar JSON flexível
+Cada serviço pode enviar campos diferentes. O payload original deve ser preservado.
+Incremental
+A primeira versão deve ser simples e funcional; funcionalidades avançadas ficam para evolução.
+Rastreável
+Deve ser possível perceber que regra foi acionada, que logs foram usados e que ações foram executadas.
+IA assistiva
+A IA explica e sugere; não executa ações críticas diretamente.
+3. Escopo do MVP
+O MVP deve comprovar o ciclo completo da solução sem tentar reproduzir uma plataforma empresarial de observabilidade. A flexibilidade será conseguida por configuração simples e não por um editor visual complexo.
+3.1 Incluído no MVP
+Aplicação local com backend Java, frontend web e base de dados PostgreSQL.
+Criação e edição de serviços monitorizados.
+Endpoint e API key por serviço para receção de logs JSON.
+Armazenamento do payload original e de campos normalizados básicos.
+Simulador de vários serviços e cenários de falha.
+Página de logs com pesquisa e filtros.
+Regras configuráveis para erro, ausência de logs e contagem de eventos.
+Criação de alertas/incidentes quando uma regra é satisfeita.
+Ações de webhook e integração com n8n.
+Análise de um alerta e dos logs associados por um LLM.
+Dashboard geral simples com estado dos serviços e alertas ativos.
+3.2 Excluído do MVP
+Multi-tenancy, faturação, gestão avançada de utilizadores e permissões.
+Editor visual de workflows com blocos e setas.
+Dashboards totalmente drag-and-drop.
+Machine learning próprio ou treino de modelos.
+Process mining completo, correlação causal avançada e deteção estatística sofisticada.
+Dados clínicos reais ou qualquer informação identificável de pacientes.
+Execução automática de ações perigosas em sistemas externos.
+4. Fluxo principal da aplicação
+1.  O utilizador cria um serviço e define o seu nome, ambiente, criticidade e frequência esperada de logs.
+2.  A plataforma gera um identificador, um endpoint de ingestão e uma API key.
+3.  Um serviço real ou simulado envia logs em JSON para esse endpoint.
+4.  O backend valida a chave, normaliza os campos básicos e guarda o payload original.
+5.  Os logs ficam disponíveis no frontend e atualizam o estado do serviço.
+6.  O motor de regras avalia condições configuradas pelo utilizador.
+7.  Quando uma condição é satisfeita, é criado um alerta/incidente.
+8.  As ações associadas são executadas: webhook, n8n e/ou análise por IA.
+9.  O utilizador consulta a timeline, reconhece o alerta e encerra o incidente quando o serviço recupera.
+Ciclo mínimo a demonstrar
+Serviço simulado → POST de log → regra “ERROR” → alerta criado → webhook para n8n → mensagem enviada → IA gera resumo do incidente.
+
+5. Arquitetura técnica
+A arquitetura deve ser simples, local e modular. Todos os componentes podem ser executados com Docker Compose, embora o backend e o frontend também possam correr diretamente durante o desenvolvimento.
+Componente
+Tecnologia proposta
+Responsabilidade
+Backend
+Java 21 + Spring Boot
+API REST, ingestão, regras, alertas, automações, IA e persistência.
+Frontend
+Next.js + TypeScript
+Interface web, formulários, logs, dashboards e gestão de alertas.
+Base de dados
+PostgreSQL
+Configuração, serviços, logs, regras, alertas e histórico.
+Automações
+n8n
+Envio de mensagens, emails e integração com sistemas externos por webhook.
+IA
+API de LLM configurável
+Resumo, explicação, possíveis causas e recomendações baseadas nos logs.
+Simulador
+Java ou script separado
+Geração de logs sintéticos e cenários de falha.
+Fluxo técnico resumido:
+Serviços simulados        |  HTTP POST + API key        vSpring Boot API  ---&gt; PostgreSQL        |                 |        |                 +--&gt; Logs, regras, alertas e configurações        |        +--&gt; n8n / Webhooks        +--&gt; API de LLM        +--&gt; Next.js (REST + atualização periódica ou SSE)
+
+6. Módulos funcionais
+Os módulos estão ordenados pela sequência recomendada de implementação. Cada módulo deve ficar utilizável e testado antes de avançar.
+Módulo 0 — Fundação técnica e ambiente local
+Objetivo
+Criar a estrutura base do projeto e permitir que todos os componentes arranquem localmente.
+Funcionalidades do MVP
+Monorepo ou dois projetos separados; configuração por variáveis de ambiente; Docker Compose com PostgreSQL e n8n; migrations Flyway; OpenAPI; tratamento global de erros; README com comandos de arranque.
+Backend
+Spring Boot com camadas controller, service, repository e domain. Endpoint /actuator/health ou /api/health.
+Frontend
+Next.js com layout, navegação lateral e páginas vazias para os módulos principais.
+Dados principais
+Configuração técnica e migrations.
+Critérios de aceitação
+Um único comando inicia PostgreSQL e n8n; backend liga à base de dados; frontend comunica com o backend; health check responde com sucesso.
+Fora do MVP / evolução
+CI/CD, Kubernetes e cloud deployment.
+
+Módulo 1 — Gestão de serviços monitorizados
+Objetivo
+Permitir que o utilizador registe qualquer serviço que pretenda monitorizar.
+Funcionalidades do MVP
+Criar, listar, editar, ativar/desativar e eliminar serviço; gerar API key; apresentar endpoint de ingestão; definir ambiente, criticidade, descrição, intervalo esperado de logs e tolerância.
+Backend
+CRUD de Service; geração e armazenamento seguro do hash da API key; validações; endpoint para regenerar chave.
+Frontend
+Lista de serviços, formulário de criação/edição e página de detalhe com endpoint copiável e último log recebido.
+Dados principais
+Service, ServiceApiKey e opcionalmente ServiceTag.
+Critérios de aceitação
+Após criar um serviço, a aplicação apresenta um endpoint e uma chave utilizável. O serviço aparece com estado UNKNOWN até receber dados.
+Fora do MVP / evolução
+Dependências entre serviços, equipas responsáveis, horários complexos e templates.
+
+Módulo 2 — Ingestão e normalização de logs
+Objetivo
+Receber logs de estruturas diferentes sem obrigar a alterar o backend para cada serviço.
+Funcionalidades do MVP
+POST de qualquer objeto JSON; autenticação por API key; campos normalizados opcionais: timestamp, level, message e eventType; armazenamento do JSON original; resposta com ID do evento; proteção contra payload inválido.
+Backend
+Endpoint /api/v1/ingest/{serviceId}/logs; parser dos campos configurados; persistência em JSONB; atualização de lastSeenAt do serviço.
+Frontend
+Na página do serviço, mostrar instruções de integração e exemplo curl. Não é necessário criar UI de mapeamento avançado no primeiro passo.
+Dados principais
+LogEvent com serviceId, receivedAt, eventTimestamp, level, message, eventType e payload JSONB.
+Critérios de aceitação
+Dois serviços podem enviar JSONs diferentes e ambos ficam armazenados. O payload original é visível e pesquisável.
+Fora do MVP / evolução
+Schema builder, transformações complexas, ingestão por Kafka e formatos não JSON.
+
+Módulo 3 — Simulador de serviços e dados
+Objetivo
+Gerar dados sintéticos para desenvolver, demonstrar e avaliar a plataforma sem depender de sistemas hospitalares reais.
+Funcionalidades do MVP
+Criar pelo menos 3 serviços simulados; emitir logs periódicos; configurar probabilidade de INFO/WARN/ERROR; permitir iniciar/parar; simular silêncio, pico de erros e latência elevada.
+Backend
+Aplicação separada simples que lê serviceId, API key, endpoint, intervalo e cenário. Pode ser Java, Python ou Node, sem necessidade de UI própria.
+Frontend
+Página opcional “Simulator” apenas para iniciar cenários através do backend. Para o primeiro MVP, comandos ou configuração em ficheiro são suficientes.
+Dados principais
+Configuração do simulador e payloads sintéticos.
+Critérios de aceitação
+É possível demonstrar: operação normal, um erro isolado, muitos erros e ausência de logs.
+Fora do MVP / evolução
+Geração visual de cenários, perfis complexos e replay de datasets.
+
+Módulo 4 — Exploração de logs e visão geral
+Objetivo
+Permitir consultar os eventos recebidos e perceber rapidamente o estado dos serviços.
+Funcionalidades do MVP
+Tabela de logs; filtros por serviço, nível, período e texto; detalhe com JSON original; ordenação por data; paginação; overview com total de serviços, estado e alertas ativos.
+Backend
+Endpoints paginados e filtráveis; query por campos normalizados; cálculo do estado atual do serviço.
+Frontend
+Dashboard simples; página Log Explorer; atualização periódica a cada poucos segundos ou SSE mais tarde.
+Dados principais
+LogEvent e ServiceStatus derivado.
+Critérios de aceitação
+O utilizador encontra um log concreto através de filtros e consegue abrir o payload integral. A overview reflete o último estado conhecido.
+Fora do MVP / evolução
+Pesquisa full-text avançada, dashboards drag-and-drop e gráficos personalizados.
+
+
+Módulo 5 — Monitores e regras configuráveis
+Objetivo
+Permitir que o utilizador defina o que considera um problema sem alterar o código.
+Funcionalidades do MVP
+Três tipos de regra: (1) log correspondente a campo/valor, (2) ausência de logs por X minutos, (3) contagem de logs correspondentes superior a N numa janela temporal. Suportar filtros por level, message contains e campo JSON simples. Ativar/desativar e definir cooldown.
+Backend
+Entidades MonitorRule e RuleCondition; avaliação após ingestão para regras de evento; job agendado para regras de ausência; controlo de cooldown e deduplicação.
+Frontend
+Assistente de criação por passos: serviço → tipo de regra → condição → severidade → ações.
+Dados principais
+MonitorRule, RuleCondition e RuleEvaluation.
+Critérios de aceitação
+O utilizador cria uma regra ERROR e uma regra “sem logs por 10 min”. Ambas são acionadas corretamente e não geram alertas repetidos durante o cooldown.
+Fora do MVP / evolução
+AND/OR aninhado, sequências complexas, percentagens, baselines e deteção estatística.
+
+Módulo 6 — Alertas e incidentes
+Objetivo
+Registar formalmente cada problema detetado e acompanhar o seu ciclo de vida.
+Funcionalidades do MVP
+Criar alerta quando uma regra dispara; estados OPEN, ACKNOWLEDGED e RESOLVED; severidade; logs relacionados; timeline; reconhecer e resolver; resolução automática opcional quando o serviço recupera.
+Backend
+Criação transacional do alerta; associação à regra e ao serviço; eventos de timeline; endpoint de acknowledge e resolve.
+Frontend
+Lista de alertas, detalhe do alerta, timeline, logs associados e botões de ação.
+Dados principais
+Alert, AlertEvent e AlertLogLink.
+Critérios de aceitação
+Quando uma regra dispara, surge um alerta com motivo, serviço, data, severidade e evidências. O utilizador consegue reconhecê-lo e resolvê-lo.
+Fora do MVP / evolução
+Gestão completa de incidentes, equipas, SLA, comentários e escalonamento.
+
+Módulo 7 — Automações e integração com n8n
+Objetivo
+Executar ações configuradas pelo utilizador quando uma regra gera um alerta.
+Funcionalidades do MVP
+Ações do MVP: criar alerta, chamar webhook e solicitar análise de IA. Configurar URL, método, headers simples e payload template. Integração recomendada: webhook do n8n que envia email, Teams ou Slack.
+Backend
+Entidades Automation e AutomationAction; executor assíncrono simples; retries limitados; guardar resultado, data, código HTTP e erro.
+Frontend
+Formulário para associar ações a uma regra; botão “Testar webhook”; histórico das execuções no alerta.
+Dados principais
+Automation, AutomationAction e ActionExecution.
+Critérios de aceitação
+Ao disparar uma regra, o backend chama o webhook do n8n uma única vez, guarda o resultado e mostra sucesso ou erro na timeline.
+Fora do MVP / evolução
+Editor visual, waits, branching, aprovações e catálogo extenso de conectores.
+
+Módulo 8 — Insights de inteligência artificial
+Objetivo
+Transformar logs técnicos em informação compreensível e acionável para o operador.
+Funcionalidades do MVP
+Botão “Analisar com IA” num alerta; selecionar alerta, regra, serviço e últimos logs relevantes; gerar resumo, causa provável, evidências e recomendações; guardar a resposta; permitir nova análise. A ação pode ser automática se configurada na regra.
+Backend
+Serviço de integração com fornecedor de LLM através de interface abstrata; prompt estruturado; limite de contexto; remoção de campos sensíveis configurados; timeout e tratamento de falhas.
+Frontend
+Cartão de análise com quatro secções: resumo, possível causa, evidências e próximos passos. Mostrar aviso de que é uma sugestão.
+Dados principais
+AIAnalysis com modelo, promptVersion, inputLogIds, output, createdAt e status.
+Critérios de aceitação
+A análise referencia apenas os logs enviados ao modelo, não inventa ações executadas e fica associada ao alerta.
+Fora do MVP / evolução
+Chat global, RAG, análise cross-service avançada e criação de regras por linguagem natural.
+
+Módulo 9 — Configuração e auditoria mínima
+Objetivo
+Garantir rastreabilidade e configuração segura da aplicação.
+Funcionalidades do MVP
+Página de configuração do LLM e n8n; variáveis sensíveis apenas no backend; histórico de criação/edição de serviços, regras, alertas e automações.
+Backend
+AuditEntry criado nos principais comandos. Segredos por environment variables ou secret store local.
+Frontend
+Página de histórico simples e mensagens claras quando integrações não estão configuradas.
+Dados principais
+AuditEntry e IntegrationSettings sem guardar tokens em texto legível na base de dados.
+Critérios de aceitação
+É possível saber quem/que processo alterou uma regra e quando uma ação foi executada.
+Fora do MVP / evolução
+RBAC, SSO, múltiplos utilizadores e auditoria regulamentar completa.
+
+7. Modelo de dados inicial
+O modelo deve manter-se pequeno. Os campos abaixo são uma base; o Claude pode ajustá-los desde que preserve as responsabilidades.
+Entidade
+Campos principais
+Service
+id, name, description, environment, criticality, active, expectedIntervalMinutes, toleranceMinutes, lastSeenAt, createdAt
+ServiceApiKey
+id, serviceId, keyHash, prefix, active, createdAt, lastUsedAt
+LogEvent
+id, serviceId, receivedAt, eventTimestamp, level, message, eventType, payloadJson
+MonitorRule
+id, serviceId, name, type, severity, enabled, windowMinutes, threshold, cooldownMinutes, lastTriggeredAt
+RuleCondition
+id, ruleId, fieldPath, operator, expectedValue
+Alert
+id, serviceId, ruleId, title, severity, status, openedAt, acknowledgedAt, resolvedAt
+AlertEvent
+id, alertId, type, description, createdAt
+AlertLogLink
+alertId, logEventId
+Automation
+id, name, enabled
+AutomationAction
+id, automationId, type, configurationJson, orderIndex
+ActionExecution
+id, alertId, actionId, status, responseCode, responseBody, executedAt
+AIAnalysis
+id, alertId, status, provider, model, inputLogIds, outputJson, createdAt
+AuditEntry
+id, action, entityType, entityId, detailsJson, createdAt
+Decisão de flexibilidade
+O payload completo do log deve ser guardado em PostgreSQL JSONB. Os campos normalizados servem para filtros e regras comuns; os campos adicionais continuam disponíveis no JSON original.
+
+8. Contratos de API e exemplos
+8.1 Criar serviço
+POST /api/services{  "name": "Laboratory Integration",  "environment": "SIMULATION",  "criticality": "HIGH",  "expectedIntervalMinutes": 5,  "toleranceMinutes": 2}
+
+Resposta esperada: dados do serviço, endpoint de ingestão e API key apresentada apenas no momento da criação ou regeneração.
+8.2 Enviar log
+POST /api/v1/ingest/{serviceId}/logsX-API-Key: &lt;service-api-key&gt;Content-Type: application/json{  "timestamp": "2026-07-12T14:30:00Z",  "level": "ERROR",  "message": "Failed to send laboratory result",  "errorCode": "EHR_TIMEOUT",  "responseTimeMs": 3200,  "correlationId": "LAB-10042"}
+
+8.3 Regra simples
+POST /api/rules{  "serviceId": "&lt;id&gt;",  "name": "Any error log",  "type": "EVENT_MATCH",  "severity": "HIGH",  "cooldownMinutes": 10,  "conditions": [    { "fieldPath": "level", "operator": "EQUALS", "expectedValue": "ERROR" }  ],  "actionIds": ["&lt;webhook-action&gt;", "&lt;ai-action&gt;"]}
+
+8.4 Regra de ausência
+{  "serviceId": "&lt;id&gt;",  "name": "No logs for 10 minutes",  "type": "NO_ACTIVITY",  "severity": "CRITICAL",  "windowMinutes": 10,  "cooldownMinutes": 30}
+
+9. Cenário de demonstração
+A demonstração deve contar uma história simples e repetível. Recomenda-se usar três serviços sintéticos:
+Laboratory Integration Service — envia resultados laboratoriais simulados para um sistema clínico.
+Patient Admission Service — envia eventos de admissão e atualização de episódios.
+Notification Service — envia notificações internas e confirmações de entrega.
+9.1 Sequência de demonstração
+1.  Criar os três serviços na interface.
+2.  Configurar o simulador com as respetivas API keys.
+3.  Mostrar logs normais a entrar e o dashboard com serviços saudáveis.
+4.  Criar a regra “level = ERROR” para o Laboratory Integration Service.
+5.  Criar a regra “sem logs durante 5 minutos” para o Notification Service.
+6.  Associar um webhook n8n e uma análise de IA.
+7.  Executar o cenário “EHR timeout”, produzindo vários logs de erro.
+8.  Ver o alerta criado, a mensagem enviada pelo n8n e o resumo da IA.
+9.  Parar o Notification Service e mostrar a regra de ausência a ser acionada.
+10.  Retomar o serviço e resolver o alerta.
+9.2 Conteúdo esperado do insight de IA
+Resumo: O serviço Laboratory Integration registou 6 falhas consecutivas ao enviar resultados.Possível causa: Timeout no sistema de destino EHR.Evidências: errorCode=EHR_TIMEOUT; responseTimeMs entre 3000 e 5200; mesma correlationId em tentativas repetidas.Recomendações: verificar disponibilidade do EHR, validade das credenciais e política de retry. A causa é uma hipótese e deve ser validada pelo operador.
+
+10. Plano de implementação
+Fase
+Entrega
+Gate para avançar
+Fase 1 — Fundação
+Projetos, Docker Compose, PostgreSQL, migrations, health checks, navegação do frontend.
+Demo funcional + testes básicos + README atualizado.
+Fase 2 — Serviços e ingestão
+CRUD de serviços, API keys, endpoint de logs e persistência JSONB.
+Demo funcional + testes básicos + README atualizado.
+Fase 3 — Simulador e exploração
+Serviços simulados, Log Explorer, filtros e overview.
+Demo funcional + testes básicos + README atualizado.
+Fase 4 — Regras e alertas
+EVENT_MATCH, NO_ACTIVITY, COUNT_THRESHOLD, cooldown e ciclo do alerta.
+Demo funcional + testes básicos + README atualizado.
+Fase 5 — Automações
+Webhook genérico, n8n, histórico de execução e retries.
+Demo funcional + testes básicos + README atualizado.
+Fase 6 — IA
+Análise de alerta, prompt estruturado, persistência e apresentação.
+Demo funcional + testes básicos + README atualizado.
+Fase 7 — Qualidade e avaliação
+Testes, dados de demonstração, documentação, métricas e correções.
+Demo funcional + testes básicos + README atualizado.
+Regra de controlo de escopo
+Quando surgir uma funcionalidade nova, classificá-la como necessária para o ciclo principal ou como evolução. Só implementar antes do fim do MVP se bloquear a demonstração ponta a ponta.
+
+11. Testes e avaliação
+O protótipo deve ser avaliado tanto tecnicamente como através de cenários de utilização. As métricas não precisam de representar escala hospitalar real, mas devem ser objetivas e reproduzíveis.
+11.1 Testes mínimos
+Unitários: avaliação de operadores, cooldown, normalização de níveis e cálculo de ausência.
+Integração: ingestão com API key válida/inválida, persistência, criação de alerta e chamada de webhook.
+Frontend: criação de serviço, filtros de logs, criação de regra e atualização de estado.
+End-to-end: cenário completo do simulador até ao n8n e à análise de IA.
+11.2 Métricas possíveis para a dissertação
+Métrica
+Como observar
+Tempo de ingestão
+Tempo entre o POST e a disponibilidade do log na API/UI.
+Tempo de deteção
+Tempo entre o evento que satisfaz a regra e a criação do alerta.
+Sucesso das regras
+Percentagem de cenários esperados corretamente detetados.
+Falsos alertas
+Alertas criados quando o cenário não devia acionar a regra.
+Tempo de automação
+Tempo entre a criação do alerta e a conclusão do webhook.
+Qualidade percebida da IA
+Avaliação do resumo, relevância das evidências e utilidade das recomendações.
+Esforço de configuração
+Número de passos ou tempo necessário para criar serviço, regra e automação.
+12. Decisões e riscos
+Risco
+Decisão de mitigação
+Escopo demasiado grande
+Manter apenas três tipos de regra, três ações e um dashboard simples no MVP.
+Formatos de log diferentes
+Guardar payload JSONB e normalizar apenas campos básicos.
+Muitos alertas repetidos
+Aplicar cooldown e deduplicação por regra/serviço.
+Ausência de dados reais
+Utilizar cenários sintéticos documentados e repetíveis.
+Integração n8n complexa
+Usar apenas webhook genérico; o workflow do n8n trata dos conectores.
+Respostas incorretas da IA
+Fornecer apenas logs selecionados, pedir evidências, apresentar como hipótese e manter aprovação humana.
+Segredos expostos
+Tokens e chaves em environment variables; API keys guardadas com hash.
+12.1 Decisões que o Claude deve confirmar antes de implementar
+Estrutura de repositórios: monorepo ou backend/frontend separados.
+Versões concretas de Spring Boot, Next.js e PostgreSQL.
+Forma de atualização do frontend: polling inicial ou Server-Sent Events.
+Fornecedor de LLM e formato de configuração da API key.
+Forma mais simples de executar o simulador.
+13. Prompt inicial para o Claude
+O texto abaixo pode ser copiado para o Claude juntamente com este documento:
+Estou a desenvolver a parte prática da minha dissertação de mestrado sobre monitorização inteligente de fluxos e processos de dados em meio hospitalar. O documento anexado contém a visão, o escopo, os módulos, o modelo de dados e a ordem de implementação do protótipo.Quero que atuues como arquiteto e programador principal, mas que mantenhas o projeto simples e adequado a uma dissertação. A aplicação deve correr localmente, com backend Java 21 + Spring Boot, frontend Next.js + TypeScript, PostgreSQL e n8n. O objetivo é receber logs JSON de serviços simulados, permitir ao utilizador configurar regras, criar alertas, executar webhooks/n8n e gerar insights de IA.Regras de trabalho:1. Implementa por módulos e não avances sem o módulo atual estar funcional.2. Começa pelo Módulo 0 e apresenta primeiro a arquitetura de pastas, decisões técnicas e plano de execução.3. Não introduzas funcionalidades fora do MVP sem as identificar como opcionais.4. Mantém o código modular, legível, documentado e com migrations Flyway.5. Inclui Docker Compose, ficheiro .env.example, README e comandos exatos para macOS.6. Cria testes mínimos para a lógica crítica.7. Usa payload JSONB para preservar logs flexíveis.8. Não guardes API keys ou tokens em texto legível.9. Antes de uma decisão que altere significativamente o escopo, explica as opções e recomenda a mais simples.10. No final de cada módulo, apresenta: ficheiros criados, como executar, como testar manualmente, testes automatizados e próximos passos.Começa agora apenas pelo Módulo 0. Não implementes ainda os módulos seguintes.
+
+13.1 Primeiro resultado esperado do Claude
+Proposta de estrutura do repositório.
+Lista de dependências e versões.
+Docker Compose para PostgreSQL e n8n.
+Projeto Spring Boot a arrancar com health check e migration inicial.
+Projeto Next.js com navegação e ligação ao health check.
+README com instruções para macOS.
+Checklist de validação do Módulo 0.
+Resultado final pretendido
+Protótipo configurável que recebe logs de vários serviços, deteta problemas através de regras do utilizador, executa ações externas e usa IA para interpretar incidentes.
+
+Fim do documento
+

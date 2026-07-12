@@ -1,0 +1,21 @@
+# Segredos e ambiente local
+.env
+.env.local
+*.local
+
+# Java / Maven
+backend/target/
+*.class
+
+# Node / Next.js
+node_modules/
+frontend/.next/
+frontend/out/
+*.tsbuildinfo
+next-env.d.ts
+
+# SO / IDE
+.DS_Store
+.idea/
+*.iml
+.vscode/

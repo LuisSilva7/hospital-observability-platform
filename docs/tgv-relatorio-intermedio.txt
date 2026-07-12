@@ -1,0 +1,924 @@
+PAGES: 39
+  
+ 
+Universidade do Minho 
+Escola de Engenharia 
+ 
+ 
+ 
+ 
+ 
+Luís Miguel Pedrosa da Silva 
+ 
+Monitorização Inteligente de Fluxos e 
+Processos de Dados em Meio 
+Hospitalar 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+maio de 2026 
+Monitorização Inteligente de Fluxos e 
+Processos de Dados em Meio Hospitalar Luís Miguel Pedrosa da Silva  UMinho | 2026 
+
+Luís Miguel Pedrosa da Silva 
+ 
+Monitorização Inteligente de Fluxos e 
+Processos de Dados em Meio Hospitalar 
+maio de 2026 
+Relatório de Trabalho de Projeto de Mestrado 
+Mestrado em Engenharia e Gestão de Sistemas de 
+Informação – Área de Especialização em Engenharia de 
+Sistemas de Informação 
+ 
+ 
+Trabalho efetuado sob a orientação do 
+Professor Tiago Guimarães 
+ii 
+DIREITOS DE AUTOR E CONDIÇÕES DE UTILIZAÇÃO DO TRABALHO POR 
+TERCEIROS 
+ 
+Este é um trabalho académico que pode ser utilizado por terceiros desde que respeitadas as 
+regras e boas práticas internacionalmente aceites, no que concerne aos direitos de autor e 
+direitos conexos. 
+Assim, o presente trabalho pode ser utilizado nos termos previstos na licença abaixo indicada. 
+Caso o utilizador necessite de permissão para poder fazer um uso do trabalho em condições 
+não previstas no licenciamento indicado, deverá contactar o autor, através do RepositóriUM 
+da Universidade do Minho. 
+ 
+Licença concedida aos utilizadores deste trabalho 
+ 
+ 
+Atribuição-NãoComercial  
+CC BY-NC  
+https://creativecommons.org/licenses/by-nc/4.0/  
+ 
+ 
+ 
+   
+
+iii 
+AGRADECIMENTOS 
+De acordo com o “Despacho RT-31/2019”, nesta componente devem constar: 
+• Os agradecimentos do autor, quando aplicável; 
+• Uma menção ao apoio financeiro, quando aplicável. 
+  
+iv 
+DECLARAÇÃO DE INTEGRIDADE 
+Declaro ter atuado com integridade na elaboração do presente trabalho académico e 
+confirmo que não recorri à prática de plágio, nem a qualquer forma de utilização indevida ou 
+falsificação de informações ou resultados em nenhuma das etapas conducente à sua 
+elaboração. 
+Mais declaro que conheço e que respeitei o Código de Conduta Ética da Universidade do 
+Minho. 
+ 
+Guimarães, maio de 2026 
+ 
+ 
+(Luís Silva) 
+  
+v 
+RESUMO 
+Monitorização Inteligente de Fluxos e Processos de Dados em Meio Hospitalar 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Palavras-chave: 
+  
+vi 
+ABSTRACT 
+Intelligent Monitoring of Data Flows and Processes in Hospitals 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Keywords:  
+  
+vii 
+ÍNDICE 
+Direitos de Autor e Condições de Utilização do Trabalho por Terceiros ................................... ii 
+Agradecimentos ........................................................................................................................ iii 
+Declaração de Integridade ........................................................................................................ iv 
+Resumo ....................................................................................................................................... v 
+Abstract ..................................................................................................................................... vi 
+Lista de Abreviaturas e Siglas .................................................................................................... ix 
+Lista de Figuras ........................................................................................................................... x 
+Lista de Tabelas ......................................................................................................................... xi 
+1. Introdução ........................................................................................................................... 1 
+1.1 Enquadramento ........................................................................................................... 1 
+1.2 Objetivos de Investigação ............................................................................................ 2 
+1.3 Método de Investigação .............................................................................................. 3 
+1.4 Estrutura do Documento ............................................................................................. 5 
+2. Revisão da Literatura .......................................................................................................... 6 
+2.1 Estratégia de Pesquisa Bibliográfica ............................................................................ 6 
+2.2 Sistemas de Informação Hospitalares e Monitorização .............................................. 7 
+2.2.1 Sistemas de Informação Hospitalares e Dados em Saúde .................................... 7 
+2.2.2 Processos Hospitalares, Fluxos e Desafios Operacionais ...................................... 8 
+2.2.3 Monitorização de Sistemas de Informação e Processos em Meio Hospitalar ..... 9 
+2.3 Dashboards e Visualização para Apoio à Monitorização e Decisão .......................... 10 
+2.4 Inteligência Artificial e Automação na Monitorização ............................................... 12 
+2.4.1 Aplicações de IA na Monitorização ..................................................................... 13 
+2.4.2 Limitações e Desafios .......................................................................................... 14 
+3. Plano de Projeto ................................................................................................................ 16 
+viii 
+3.1 Planeamento das Atividades ...................................................................................... 16 
+3.2 Riscos do Estudo ........................................................................................................ 17 
+4. Conclusões e Trabalhos Futuros ....................................................................................... 19 
+Referências ............................................................................................................................... 21 
+Apêndice I ................................................................................................................................. 25 
+Anexo I ...................................................................................................................................... 26 
+ix 
+LISTA DE ABREVIATURAS E SIGLAS 
+DSR Design Science Research 
+EMR Electronic Medical Records 
+FHIR Fast Healthcare Interoperability Resources 
+HIMS Healthcare Information Management Systems 
+IA Inteligência Artificial 
+RPA Robotic Process Automation 
+SI Sistema de Informação 
+TI Tecnologias de Informação 
+ 
+ 
+x 
+LISTA DE FIGURAS 
+Figura 1: DSRM for Information Systems - Peffers et al. 2007 .................................................. 4 
+  
+ 
+xi 
+LISTA DE TABELAS 
+Tabela 1: Plano de Atividades .................................................................................................. 16 
+Tabela 2: Riscos do Estudo ....................................................................................................... 17 
+ 
+1 
+1. INTRODUÇÃO 
+1.1 Enquadramento 
+A monitorização inteligente de fluxos e processos de dados em meio hospitalar assume 
+um papel cada vez mais relevante no contexto da transformação digital da saúde, 
+caracterizada pela crescente adoção de sistemas de informação clínicos e administrativos 
+(Global Strategy on Digital Health 2020 -2025). Este processo de digitalização tem vindo a 
+alterar profundamente a forma como as organizações de saúde operam, introduzindo novos 
+desafios associados à gestão de informação, à interoperabilidade entre sistemas e à 
+necessidade de garantir elevados níveis de qualidade e segurança. O simples armazenamento 
+de dados não é suficiente para garantir eficiência operacional e segurança do paciente, sendo 
+necessário dispor de mecanismos que permitam acompanhar, em tempo real, o estado dos 
+processos e dos fluxos de i nformação (Sheikh et al., 2015) . Neste sentido, a capacidade de 
+monitorizar continuamente os sistemas torna-se fundamental para assegurar a continuidade 
+dos serviços e apoiar a tomada de decisão em contextos críticos. 
+A elevada complexidade dos sistemas hospitalares e a heterogeneidade das fontes de 
+dados tornam essencial a utilização de ferramentas de monitorização capazes de detetar 
+falhas, atrasos e inconsistências, reduzindo o risco de erros e melhorando a fiabilida de da 
+informação (Sheikh et al., 2015) . Estes ambientes caracterizam -se pela coexistência de 
+múltiplos sistemas clínicos e administrativos, frequentemente distribuídos e desenvolvidos de 
+forma independente, o que dificulta a obtenção de uma visão integrada sobre o 
+funcionamento global da organ ização. A ausência de uma monitorização eficaz pode 
+comprometer a deteção precoce de problemas e aumentar a dependência de intervenções 
+manuais e reativas. Neste contexto, as dashboards digitais têm demonstrado ser instrumentos 
+eficazes para apoiar a tomada de decisão, sintetizando informação crítica e permitindo uma 
+resposta mais rápida a situações anómalas (Dowding et al., 2015) . A centralização da 
+informação em dashboards contribui para uma maior visibilidade operacional, ainda que, por 
+si só, não elimine a necessidade de interpretação por parte dos utilizadores. 
+Paralelamente, têm emergido soluções baseadas em inteligência artificial, 
+nomeadamente modelos de linguagem de larga escala (LLMs), com potencial para apoiar 
+ 
+2 
+tarefas de análise, síntese e automatização de processos em saúde, ao processarem grandes 
+volumes de informação e gerarem recomendações ou descrições em linguagem natural (Maity 
+& Saikia, 2025) . Estas tecnologias permitem lidar de forma mais eficaz com dados não 
+estruturados, como logs e eventos de sistemas, frequentemente gerados em grande escala 
+em ambientes hospitalares. Em ambientes operacionais complexos, agentes de IA e LLMs têm 
+sido utilizados para automatizar tarefas como resumo de logs, triagem de alertas e apoio à 
+resposta a incidentes, reduzindo o esforço manual e o tempo de reação (Srinivas et al., 2025). 
+A incorporação destas abordagens na monitorização de sistemas representa uma evolução 
+face às soluções tradicionais, abrindo caminho a modelos mais proativos e inteligentes de 
+gestão operacional. 
+1.2 Objetivos de Investigação 
+Dada a relevância do presente tema desta dissertação de mestrado, onde se procura 
+desenvolver uma solução tecnológica orientada à monitorização inteligente de fluxos e 
+processos de dados em meio hospitalar, torna -se essencial definir objetivos que permitam  
+enquadrar o problema, orientar o desenvolvimento da plataforma e avaliar o seu contributo. 
+Neste sentido, com a realização desta dissertação pretende-se a concretização dos seguintes 
+objetivos: 
+• Identificar as principais necessidades associadas à monitorização de fluxos e processos 
+de dados em ambiente hospitalar; 
+• Analisar as limitações das abordagens e ferramentas existentes no apoio à 
+monitorização contínua e deteção de falhas nos sistemas hospitalares; 
+• Definir os requisitos funcionais e técnicos de uma plataforma de monitorização 
+aplicada ao contexto hospitalar; 
+• Desenvolver uma plataforma para recolha, visualização e acompanhamento dos fluxos 
+de dados; 
+• Integrar, na plataforma proposta, serviços de inteligência artificial e modelos de 
+linguagem de larga escala (LLMs) já existentes, de forma a apoiar a interpretação, 
+classificação ou priorização de incidentes e a geração de descrições ou recomendações 
+automatizadas; 
+ 
+3 
+• Implementar mecanismos de automatização inteligente na resposta a incidentes, 
+tirando partido da integração com agentes/serviços de IA para reduzir a dependência 
+de   monitorização contínua por parte de operadores humanos; 
+• Avaliar o impacto da solução proposta na visibilidade, fiabilidade e eficiência da gestão 
+dos sistemas de informação hospitalares, bem como no potencial de redução do 
+esforço manual associado à monitorização. 
+A concretização destes objetivos deverá traduzir -se num conjunto de resultados 
+alinhados com a natureza aplicada do presente trabalho. Assim, esta dissertação visa cumprir 
+com os seguintes resultados: 
+• Documento técnico-científico com revisão da literatura sobre monitorização de dados 
+em saúde, dashboards hospitalares, automação inteligente e utilização de LLMs em 
+contextos clínicos e operacionais; 
+• Plataforma funcional para monitorização de fluxos de dados em ambiente hospitalar,  
+incluindo dashboards para visualização do estado de sistemas e processos; 
+• Implementação de um módulo de integração com pelo menos um serviço de IA/LLM 
+existente (por exemplo, para resumo de logs, geração automática de descrições de 
+incidentes ou sugestão de ações de mitigação); 
+• Mecanismos de notificação e resposta automática a situações anómalas ou falhas 
+detetadas, suportados por regras e/ou agentes de IA, reduzindo a necessidade de 
+intervenção humana contínua; 
+• Análise crítica dos resultados obtidos, incluindo o contributo da automação inteligente 
+e dos LLMs para a redução do esforço de monitorização e para o aumento da resiliência 
+dos sistemas de informação em saúde, bem como a identificação de limitações e 
+oportunidades de melhoria para trabalhos futuros. 
+1.3 Método de Investigação 
+O presente trabalho adota o método de investigação Design Science Research  (DSR) 
+como abordagem de investigação principal, por se revelar particularmente adequad o ao 
+desenvolvimento de soluções tecnológicas orientadas para a resolução de problemas reais no 
+domínio dos Sistemas de Informação (SI).  Este método de investigação revela-se 
+ 
+4 
+particularmente pertinente no contexto desta investigação, cujo objetivo passa pelo 
+desenvolvimento de uma plataforma de monitorização inteligente aplicada a ambientes 
+hospitalares, integrando mecanismos de visualização, acompanhamento de fluxos de dados e 
+serviços baseados em inteligência artificial.  
+Neste contexto, será seguido o modelo de Design Science Research Methodology  
+(DSRM) proposto por Peffers et al. (2007), o qual organiza o processo de investigação em seis 
+atividades principais, ilustradas na Figura 1: identificação do problema, definição dos objetivos 
+da solução, conceção e desenvolvimento do artefacto, demonstração, avaliação e 
+comunicação dos resultados. 
+A aplicação desta metodologia permitirá estruturar o desenvolvimento do trabalho de 
+forma progressiva, partindo da identificação das necessidades e limitações associadas à 
+monitorização de sistemas hospitalares, para a definição dos requisitos da solução e posterior 
+desenvolvimento da plataforma proposta. Seguidamente, o artefacto será demonstrado e 
+avaliado, procurando aferir a sua aplicabilidade no apoio à visibilidade ope racional, deteção 
+de falhas, interpretação de incidentes e redução do esforço manual de monitorização. 
+Dada a natureza aplicada da dissertação, o trabalho iniciar -se-á a partir de uma 
+abordagem centrada no problema, uma das possibilidades previstas pela DSRM, uma vez que 
+a investigação parte da identificação de desafios concretos existentes no contexto hospitalar. 
+A metodologia assume, assim, um papel orientador ao longo de todo o processo, assegurando 
+a ligação entre o problema identificado, os objetivos definidos, o artefacto desenvolvido e a 
+avaliação dos resultados alcançados. 
+Figura 1: DSRM for Information Systems - Peffers et al. 2007 
+ 
+5 
+1.4 Estrutura do Documento 
+De forma a facilitar a compreensão do trabalho desenvolvido no âmbito da presente 
+dissertação, bem como do percurso metodológico seguido até ao momento, o documento 
+encontra-se organizado em três capítulos principais. Esta estrutura foi definida com o objetivo 
+de apresentar de forma progressiva o enquadramento do tema, os fundamentos teóricos que 
+sustentam a investigação e uma síntese do trabalho realizado. 
+O primeiro capítulo é dedicado à introdução do tema em estudo, começando por u m 
+enquadramento geral e pela motivação do trabalho, onde é contextualizada a relevância da 
+monitorização inteligente de fluxos e processos de dados em meio hospitalar. Neste capítulo 
+são igualmente apresentados os objetivos da investigação, os resultados e sperados e a 
+metodologia adotada para a condução do trabalho, baseada na abordagem de Design Science 
+Research. Por fim, é descrita a estrutura do documento, permitindo ao leitor obter uma visão 
+global da organização da dissertação. 
+O segundo capítulo é dedicado à revisão da literatura, incidindo sobre os principais temas 
+relacionados com o objeto de estudo. Neste capítulo são abordados os conceitos 
+fundamentais associados à monitorização de sistemas de informação em saúde, à utilização 
+de dashboards para apoio à monitorização e tomada de decisão, bem como ao papel da 
+inteligência artificial e dos modelos de linguagem de larga escala na automação e 
+interpretação de eventos em contextos operacionais complexos. Esta revisão tem como 
+objetivo enquadrar teoricamente o trabalho, identificar limitações das abordagens existentes 
+e fundamentar a necessidade da solução proposta. 
+Por fim, o terceiro capítulo apresenta  o plano de projeto e  a respetiva  conclusão 
+intermédia, onde é efetuada uma síntese do trabalho desenvolvido até ao momento. Neste 
+capítulo são destacadas as principais contribuições alcançadas nesta fase da dissertação, bem 
+como delineadas as etapas seguintes a realizar no desenvolvimento da solução proposta e na 
+continuação do trabalho de investigação. 
+ 
+ 
+6 
+2. REVISÃO DA LITERATURA 
+2.1 Estratégia de Pesquisa Bibliográfica 
+A estratégia de pesquisa adotada para a presente revisão da literatura baseia -se numa 
+abordagem estruturada e sistemática, com o objetivo de identificar, selecionar e analisar 
+trabalhos científicos relevantes nas áreas da monitorização de sistemas de infor mação em 
+saúde, dashboards operacionais e inteligência artificial aplicada à análise e automação de 
+processos. Esta abordagem visa assegurar a abrangência temática da revisão, bem como o 
+rigor científico na seleção das fontes utilizadas. 
+Posto isto, para a pesquisa bibliográfica foram utilizadas bases de dados científicas 
+amplamente reconhecidas, nomeadamente: PubMed, Scopus, IEEE Xplore e Google Scholar. 
+A definição das palavras-chave foi orientada pelos principais eixos conceptuais da dissertação. 
+Foram considerados três grupos temáticos: (i) o contexto hospitalar e os sistemas de 
+informação em saúde; (ii) a monitorização de fluxos, processos e eventos; e (iii) as tecnologias 
+de suporte, incluindo dashboards e inteligência artificial. Entre os termos utilizados destacam-
+se expressões como “ hospital information systems”, “healthcare data monitoring”, “process 
+monitoring”, “ data flow monitoring ”, “ operational dashboards ”, “ data visualization in 
+healthcare”, “ incident detection ”, “ artificial intelligence in healthcare ”, “ intelligent 
+automation” e “large language models”. Sempre que pertinente, foram utilizadas variações e 
+combinações destes termos através de operadores booleanos (AND, OR), permitindo refinar 
+os resultados e assegurar a cobertura adequada dos diferentes subtemas. 
+Após a realização das pesquisas iniciais, os resultados obtidos foram sujeitos a um 
+processo de seleção progressivo. Numa primeira fase, procedeu -se à análise dos títulos e 
+resumos, com o objetivo de excluir trabalhos claramente desalinhados com o âmbito d a 
+investigação. Posteriormente, os artigos potencialmente relevantes foram analisados com 
+maior profundidade, mediante a leitura da introdução, metodologia e conclusões, de forma a 
+avaliar o seu contributo efetivo para as questões orientadoras da revisão. Foram privilegiados 
+estudos que abordassem explicitamente desafios associados à monitorização em ambientes 
+hospitalares, à utilização de dashboards em contexto operacional ou à aplicação de técnicas 
+de inteligência artificial na análise de eventos e incidentes. 
+ 
+7 
+No que respeita aos critérios de inclusão, foram considerados prioritariamente artigos 
+publicados nos últimos dez anos, de modo a garantir a atualidade da análise, sem prejuízo da 
+inclusão de trabalhos fundacionais relevantes para o enquadramento conceptua l. Desta 
+forma, foram apenas incluídos estudos revistos por pares e publicados em revistas científicas 
+ou conferências reconhecidas. Por outro lado, foram excluídos trabalhos de natureza 
+exclusivamente clínica sem componente tecnológica relevante, bem como  publicações que 
+não apresentassem contributos claros para a compreensão da monitorização de sistemas ou 
+da automação inteligente em saúde. 
+A seleção final da literatura teve igualmente em consideração a diversidade metodológica e a 
+existência de evidência empírica, valorizando estudos de caso, implementações reais ou 
+avaliações experimentais que permitissem compreender a aplicabilidade prátic a das 
+abordagens descritas. Este processo permitiu construir uma base teórica sólida e coerente, 
+que sustenta o dese nvolvimento da solução proposta no âmbito da presente dissertação e 
+fundamenta as opções metodológicas e tecnológicas adotadas. 
+2.2 Sistemas de Informação Hospitalares e Monitorização 
+2.2.1 Sistemas de Informação Hospitalares e Dados em Saúde 
+A transformação digital dos sistemas de saúde tem vindo a alterar de forma 
+significativa a forma como os dados clínicos, administrativos e operacionais são gerados, 
+armazenados, analisados e utilizados (Kor, 2026). Neste contexto, os sistemas de informação 
+hospitalares e os registos de saúde eletrónicos assumem um papel central, permitindo 
+armazenar e disponibilizar informação relevante sobre os pacientes e suportando 
+simultaneamente processos clínicos e administrati vos. Kor (2026)  refere que esta 
+transformação corresponde à transição de modelos tradicionais, frequentemente 
+caracterizados por sistemas fragmentados e registos em papel, para sistemas digitais 
+centrados no paciente e apoiados por infraestru turas de dados em larga escala. O autor 
+salienta ainda que, apesar dos benefícios ao nível da eficiência e apoio à decisão clínica, 
+persistem desafios relacionados com interoperabilidade, governação dos dados e integração 
+de sistemas. 
+ 
+8 
+Os sistemas de informação hospitalares constituem, assim, infraestruturas essenciais 
+para a gestão da informação em ambiente hospitalar. Imran et al. (2021) referem que os 
+Healthcare Information Management Systems (HIMS) são utilizados por profissionais de saúde 
+e equipas de gestão, funcionando como uma interface entre os cuidados ao paciente e a 
+investigação médica. Estes sistemas assentam em bases de dados que armazenam informação 
+como diagnósticos, prescrições e  planos de tratamento, sendo caracterizados por uma 
+produção contínua de dados associados a múltiplos processos hospitalares. 
+A complexidade destes sistemas resulta, em grande parte, da diversidade d os dados 
+em saúde. Imran et al. (2021) identificam diferentes tipos de dados, incluindo dados clínicos, 
+administrativos, financeiros, imagiológicos e laboratoriais, evidenciando a multiplicidade de 
+fontes que compõem o conjunto de sistemas e fontes de dados hospitalares. Esta diversidade 
+é reforçada pela coexistência de dados estruturados e não estruturados, tais como notas 
+clínicas, imagens médicas e informação proveniente de dispositivos de monitorização. 
+Para além disso, os dados hospitalares apresentam características associadas ao 
+conceito de big data, nomeadamente volume, variedade e velocidade. Mishra e Datla (2025) 
+referem que os sistemas de saúde geram grandes volumes de dados provenientes de diversas 
+fontes, incluindo dispositivos médicos, sensores e registos clínicos, sendo frequentemente 
+necessário processar informação em fluxo contínuo. Esta realidade é agravada pela existência 
+de silos de dados e dificuldades de interoperabilidade entre sistemas, o que dificulta a 
+integração e análise dos dados (Mishra e Datla, 2025). 
+2.2.2 Processos Hospitalares, Fluxos e Desafios Operacionais 
+A gestão dos processos clínicos e operacionais em ambiente hospitalar assume um 
+papel crítico na eficiência dos serviços de saúde. A literatura evidencia que a forma como os 
+processos são estruturados pode ter impacto direto no desempenho dos sistemas, 
+nomeadamente ao nível dos tempos de espera, da formação de filas e da ocorrência de 
+estrangulamentos nos serviços (Batubara et al. 2020). Neste contexto, o conceito de fluxo de 
+pacientes assume particular relevância, uma vez que permite compreender o percurso dos 
+pacientes ao longo das diferentes etapas de prestação de cuidados. Ezeanyim et al. (2025) 
+definem patient flow como o percurso dos pacientes desde a admissão até à alta, incluindo 
+diagnósticos, tratamentos e transferências entre departamentos. Os autores associam este 
+ 
+9 
+conceito à eficiência do serviço, que depende da utilização adequada de recursos, da redução 
+de tempos de espera e da otimização dos processos hospitalares. 
+No entanto, os hospitais enfrentam desafios significativos ao nível da gestão destes 
+fluxos. Ezeanyim et al. (2025) referem que problemas como sobrelotação dos serviços de 
+urgência, atrasos em diagnósticos e estrangulamentos nos processos de admissão e alt a são 
+recorrentes, comprometendo o acesso aos cuidados e a qualidade do serviço prestado. Estes 
+desafios refletem, em muitos casos, um desalinhamento entre a procura e os recursos 
+disponíveis, bem como limitações na capacidade de planeamento e coordenação operacional. 
+Para compreender e melhorar estes processos, têm sido utilizadas abordagens 
+baseadas em dados, nomeadamente técnicas de análise de processos. Samara e Harry (2025) 
+referem que o Process Mining  permite analisar logs de eventos provenientes de sistemas 
+hospitalares, como EHRs e sistemas de informação clínica, com o objetivo de identificar fluxos 
+de trabalho reais, tempos de execução e desvios face aos processos esperados. Esta 
+abordagem possibilita uma análise objetiv a dos processos, permitindo identificar 
+ineficiências, estrangulamentos e oportunidades de melhoria. 
+Adicionalmente, os autores destacam que a integração d e Process Mining  com 
+abordagens de melhoria contínua permite estruturar intervenções baseadas em evidência, 
+suportadas por dados reais dos sistemas hospitalares. Este processo inclui a recolha de dados, 
+a análise dos fluxos, a implementação de melhorias e a monitorização contínua dos 
+resultados, criando um ciclo iterativo de otimização dos processos hospitalares. 
+2.2.3 Monitorização de Sistemas de Informação e Processos em Meio Hospitalar 
+A necessidade de monitorização dos sistemas hospitalares surge como consequência 
+direta da complexidade dos dados e dos processos envolvidos na prestação de cuidados  
+(Mishra e Datla 2025; Park et al. 2025). Neste contexto, a monitorização permite acompanhar 
+o funcionamento dos sistemas e identificar falhas, atrasos ou inconsistências que possam 
+comprometer a eficiência operacional e a qualidade dos cuidados prestados. Mishra e Datla 
+(2025) referem que os sistemas tradicionais de análise de dados em saúde são 
+frequentemente baseados em processamento por lotes, o que introduz atrasos na 
+identificação de eventos críticos e limita a capacidade de resposta em tempo útil. 
+ 
+10 
+Os autores salientam que a monitorização em tempo real permite analisar 
+continuamente os dados provenientes de Electronic Health Records (EHRs) e de dispositivos 
+médicos, possibilitando a deteção precoce de alterações no estado dos pacientes. No entanto, 
+referem também que esta abordagem enfrenta desafios relacionados com o volume, 
+velocidade e diversidade dos dados, bem como com a integração de múltiplas fontes de 
+informação. 
+Complementarmente, Park et al.  (2025) referem que a crescente complexidade dos 
+sistemas hospitalares, impulsionada pela integração de tecnologias como inteligência 
+artificial, IoT e cloud, dificulta a monitorização baseada apenas em componentes técnicos. Os 
+autores defendem a utilização de abo rdagens end-to-end, que permitem avaliar o 
+desempenho dos processos a partir da perspetiva do utilizador final, captando a 
+interdependência entre sistemas e serviços. 
+No estudo apresentado por Park et al. (2025), a utilização de Robotic Process 
+Automation (RPA) permitiu simular  e monitorizar  interações de utilizadores com sistemas 
+Electronic Medical Records (EMR) hospitalares. Os autores verificaram que esta abordagem 
+permitiu, em particular, detetar erros após atualizações de software e identificar 
+discrepâncias entre a experiência dos utilizadores e as métricas técnicas dos sistemas. 
+De forma geral, os estudos analisados sugerem que a monitorização em meio 
+hospitalar não deve limitar -se à observação isolada de componentes tecnológicos, devendo 
+considerar também os dados, os processos e as interações entre sistemas. Neste contexto, a 
+monitorização pode contribuir para reforçar a fiabilidade dos sistemas de informação 
+hospitalares, apoiar a tomada de decisão e sustentar iniciativas de melhoria contínua dos 
+processos, estabelecendo as bases para a utilização de ferramentas de visualização e análise, 
+como dashboards, abordadas na secção seguinte. 
+2.3 Dashboards e Visualização para Apoio à Monitorização e Decisão  
+Na sequência da crescente complexidade dos sistemas de informação em saúde e da 
+elevada diversidade dos dados clínicos, que reforçam a necessidade de mecanismos de 
+monitorização e apoio à decisão, conforme discutido na Secção 2.2.3, os dashboards são 
+utilizados como ferramentas que permitem a análise e visualização de dados em contexto 
+hospitalar (Barrento et al., 2013; Deshmukh e Pacharaney, 2025). De acordo com Deshmukh 
+ 
+11 
+e Pacharaney (2025), os dashboards podem ser utilizados como ferramentas de visualização 
+de dados em contexto de saúde, permitindo identificar diferenças nos resultados clínicos e 
+monitorizar indicadores relevantes em tempo real. 
+Os dashboards permitem disponibilizar informação hospitalar através de 
+representações gráficas e tabulares, facilitando a análise do desempenho e da evolução da 
+atividade hospitalar por parte dos utilizadores. Barrento et al. (2013) referem que, no 
+contexto das urgênci as hospitalares, foram implementadas métricas como o número de 
+admissões à urgência, a média diária das admissões e a distribuição das admissões por cor de 
+triagem, situação e género. Adicionalmente, funcionalidades como filtros temporais, 
+comparação entre centros hospitalares, visualizações gráficas e análise detalhada dos dados 
+permitem explorar a informação em diferentes níveis de granularidade (Barrento et al., 2013). 
+Para além da visualização de dados, os dashboards podem apoiar a identificação de 
+diferenças em resultados clínicos e de problemas associados ao fluxo de pacientes, como 
+atrasos nos processos de admissão e alta. Deshmukh e Pacharaney (2025) referem que os 
+dashboards podem ser utilizados para identificar diferenças relevantes nos resultados clínicos, 
+orientar esforços de melhoria da qualidade e, potencialmente, contribuir para a equidade na 
+saúde. Os autores salientam ainda que os dashboards médicos permitem monitorizar 
+indicadores relevantes em tempo real e que a visualização de dados de fluxo de pacientes e 
+de alta pode apoiar uma atuação mais rápida por parte dos médicos. 
+Por outro lado, a eficácia dos dashboards depende, em grande medida, da forma como 
+a informação é representada e disponibilizada aos utilizadores. Sureephong et al., (2025) 
+salientam que a seleção adequada dos dados e das técnicas de visualização é essencial para 
+garantir que o dashboard é funcional e fácil de utilizar, devendo estas ser ajustadas ao tipo de 
+dados e ao contexto de análise. Como exemplo, n o próprio estudo desenvolvido pelos 
+autores, foram aplicadas diferentes técnicas a diferentes tipos de dados, sendo utilizados 
+gráficos de linha para representar dados temporais, gráficos de barras para comparações 
+categóricas e mapas de calor para informação espacial. 
+Complementarmente, a componente de interação assume um papel fundamental na 
+utilidade dos dashboards, permitindo aos utilizadores explorar os dados de forma dinâmica e 
+adaptada às suas necessidades. Anukem et al., (2025) referem que os dashboards interativos, 
+suportados por visual analytics, permitem aos utilizadores analisar dados complexos através 
+de interfaces visuais, recorrendo a funcionalidades como filtragem, exploração de padrões e 
+ 
+12 
+personalização da informação apresentada. Segundo os autores, esta abordagem potencia a 
+capacidade cognitiva dos utilizadores e facilita a tomada de decisão em contextos clínicos 
+complexos. Para além da visualização e interação, a integração de técnicas avançadas, como 
+machine learning, tem vindo a reforçar o papel dos dashboards no apoio à decisão. Anukem 
+et al. (2025) demonstram que a incorporação de modelos preditivos permite prever estados 
+clínicos dos pacientes e apoiar a tomada de decisão de forma mais rápida. 
+Por outro lado, a literatura evidencia que os dashboards devem ser concebidos tendo 
+em consideração as necessidades dos utilizadores e o contexto de utilização. Wisedsri et al., 
+(2024) destacam que a utilização de dashboards em contexto clínico deve privilegiar 
+representações visuais intuitivas, que permitam aos profissionais interpretar rapidamente os 
+dados e apoiar decisões relacionadas com o tratamento dos pacientes. 
+Apesar das vantagens associadas à utilização de dashboards, existem também desafios 
+relevantes a considerar. Barrento et al. (2013) referem que a qualidade dos dados é um fator 
+crítico, uma vez que a presença de inconsistências ou registos incorretos pode comprometer 
+a fiabilidade das análises realizadas. Adicion almente, Anukem et al. (2025) evidenciam a 
+importância de desenvolver dashboards com interfaces intuitivas e funcionalidades 
+interativas, que facilitem a exploração de dados e apoiem a interpretaçã o da informação por 
+parte dos utilizadores. 
+2.4 Inteligência Artificial e Automação na Monitorização 
+A aplicação de inteligência artificial à monitorização de sistemas e processos tem vindo 
+a ser associada ao conceito de AIOps, que consiste na utilização de técnicas de big data, 
+machine learning para apoiar operações de tecnologias de informação ( TI), nomeadamente 
+através da deteção de anomalias, análise de causa -raiz e ações de mitigação. Remil et al., 
+(2024) referem que os sistemas de TI modernos geram grandes volumes de dados 
+operacionais provenientes de logs, eventos, métricas de desempenho, tráfego de rede e 
+relatórios de incidentes, tornando insuficientes abordagens tradicionais baseadas em tarefas 
+manuais e regras estáticas. Neste contexto, os autores enquadram o AIOps como uma 
+abordagem orientada à melhor ia da gestão de incidentes, através da recolha, análise e 
+interpretação de dados operacionais, permitindo apoiar processos de deteção, diagnóstico e 
+mitigação de incidentes. 
+ 
+13 
+No contexto hospitalar, esta abordagem ganha relevância devido à existência de 
+múltiplas fontes de dados e sistemas heterogéneos associados às operações hospitalares. Niu 
+et al., (2023) referem que a integração entre IoT, processamento de dados heterogéneos e 
+automação baseada em IA pode contribuir para melhorar a eficiência operacional e apoiar 
+atividades de manutenção hospitalar, ao permitir a recolha de dados em tempo real a partir 
+de equipamentos médicos, sensores, wearables e outros sistemas hospitalares. Os autores 
+salientam ainda que a diversidade das fontes de dados introduz desafios ao nível da  
+transmissão, integração e processamento  dos dados, exigindo mecanismos capazes de lid ar 
+com diferentes formatos e necessidades de processamento da informação. 
+2.4.1 Aplicações de IA na Monitorização 
+Uma das principais aplicações da IA na monitorização operacional prende -se com a 
+deteção de incidentes e anomalias. Remil et al. (2024) definem a deteção de incidentes como 
+o processo de identificação de desvios ou comportamentos anormais no funcionamento dos 
+sistemas, recorrendo à análise de fontes como métricas de desempenho, logs de sistema e 
+relatórios de utilizadores. Segundo os autores, estas abordagens permitem reconhecer 
+eventos que podem indicar falhas ou outros comportamentos anómalos, apoiando uma 
+resposta mais rápida no âmbito da gestão de incidentes.  Para além da deteção, a IA pode 
+apoiar a análise de causa -raiz. Remil et al. (2024) referem que a root cause analysis procura 
+identificar os componentes ou fatores responsáveis por uma falha, permitindo compreender 
+a origem do incidente e apoiar a sua resolução. No contexto d e AIOps, esta análise é 
+particularmente relevante porque permite relacionar diferentes fontes de dados 
+operacionais, como eventos, logs e métricas, contribuindo para uma melhor compreensão do 
+comportamento dos sistemas.  
+A automação de ações de resposta constitui outra aplicação relevante. Remil et al. 
+(2024) referem que a mitigação, também designada como remediation, corresponde ao 
+processo de resposta a incidentes através da definição ou execução de ações corretivas. 
+Embora os autores indiquem que existem menos contributos nesta área quando comparada 
+com a deteção de incidentes e a análise de causa-raiz, a automatização de ações de mitigação 
+é apresentada como uma das capacidades associadas ao AIOps. 
+ 
+14 
+Em contexto hospitalar, Niu et al. (2023) associam a integração entre IoT, dados 
+heterogéneos e automação baseada em IA à melhoria da eficiência das operações 
+hospitalares e das atividades de manutenção. Os autores referem que dispositivos IoT e 
+sensores p odem recolher dados em tempo real a partir de equipamentos médicos, 
+dispositivos inteligentes e sistemas hospitalares, possibilitando a transmissão, processamento 
+e análise desses dados para apoiar decisões operacionais.  A monitorização inteligente em 
+infraestruturas cloud de saúde é também abordada por Lhamo et al., (2024) que referem que 
+modelos de machine learning  e deep learning  podem identificar padrões incomuns em 
+sistemas de dados de saúde distribuídos e dinâmicos. Segundo os autores, a deteção de 
+anomalias em tempo real é relevante para manter a integridade dos dados e identificar 
+ameaças em plataformas cloud de saúde. Lhamo et al. (2024) referem ainda que a integração 
+entre IA e ferramentas de observabilidade cloud pode apoiar a monitorização e deteção de 
+anomalias em ambientes cloud de saúde. Os autores indicam que estes sistemas podem 
+apoiar a identificação de comportamentos anómalos, acessos não autorizados e potenciais 
+ameaças de segurança, contribuindo para a monitorização de ambientes cloud de saúde. 
+2.4.2 Limitações e Desafios 
+Apesar das aplicações identificadas, a literatura analisada aponta vários desafios 
+associados à utilização de IA na monitorização de sistemas e processos. Remil et al. (2024) 
+referem que o domínio de AIOps ainda se encontra numa fase inicial e apresenta fa lta de 
+convenções e frameworks padronizadas. Os autores destacam ainda desafios relacionados 
+com a gestão de dados, a definição dos problemas -alvo, os requisitos técnicos e a avaliação 
+dos modelos utilizados em soluções de AIOps.  Um dos desafios centrais i dentificados por 
+Remil et al. (2024) prende-se com a qualidade e disponibilidade dos dados. Os autores referem 
+que os dados utilizados em AIOps podem apresentar ausência de rótulos fiáveis, necessidade 
+de esforço manual para obter labels de qualidade, datasets desequilibrados e níveis elevados 
+de ruído. 
+No contexto hospitalar, Niu et al. (2023) destacam desafios associados à transmissão e 
+integração de dados heterogéneos. Segundo os autores, a existência de múltiplas fontes de 
+dados em saúde, incluindo dispositivos IoT, sensores, equipamentos médicos, sis temas 
+hospitalares e registos clínicos, dificulta a normalização, combinação e partilha de informação. 
+ 
+15 
+Os autores referem ainda desafios relacionados com interoperabilidade, segurança e 
+privacidade, requisitos de tempo real e integração com sistemas legados. 
+A segurança e a privacidade constituem também desafios relevantes nas infraestruturas 
+cloud de saúde. Lhamo et al. (2024) referem que os ambientes cloud em saúde enfrentam 
+riscos como violações de dados, acessos não autorizados e ameaças à privacidade dos 
+pacientes. Os autores salientam que os sistemas de deteção de anomalias baseados em IA 
+devem respeitar requisitos de privacidade e regulamentação, inclu indo HIPAA e GDPR, 
+sobretudo quando os modelos são treinados ou executados sobre dados sensíveis. 
+Complementarmente, Rongali (2025) refere que a integração de IA em sistemas cloud de 
+saúde cria desafios de segurança específicos, uma vez que os modelos de IA necessitam de 
+acesso a grandes volumes de dados para treino e inferência. O autor identifica riscos como 
+credenciais comprometidas, ameaças internas, envenenamento de modelos e ataques, 
+defendendo a utilização de arquiteturas zero-trust baseadas em verificação contínua, 
+princípio de menor privilégio e controlo rigoroso de acessos.  
+A interoperabilidade é outro desafio transversal  apontado por  Rongali (2025) , o  qual 
+refere que as organizações de saúde necessitam de partilhar informação entre sistemas, 
+mantendo simultaneamente controlos rigorosos de segurança. O autor indica que standards 
+como Fast Healthcare Interoperability Resources (FHIR) podem apoiar a troca de dados, mas 
+requerem mecanismos robustos de segurança para prevenir acessos não autorizados durante 
+a transmissão e processamento da informação. 
+Por fim, Lhamo et al. (2024) referem que sistemas de deteção de anomalias baseados em 
+IA podem enfrentar desafios relacionados com custos computacionais e requisitos de 
+processamento em tempo real. Assim, a adoção de IA na monitorização hospitalar deve 
+considerar não apenas a capacidade técnica de deteção e automação, mas também a 
+qualidade dos dados, a interoperabilidade, a segurança, a privacidade e a integração com os 
+sistemas e infraestruturas existentes. 
+ 
+ 
+ 
+  
+ 
+16 
+3. PLANO DE PROJETO 
+Este capítulo tem como objetivo apresentar o plano de projeto da presente dissertação 
+de Mestrado, identificando e descrevendo as principais tarefas a realizar ao longo do período 
+de desenvolvimento do trabalho, bem como o tempo previsto para a sua execução. 
+Adicionalmente, são apresentados os principais riscos identificados até  ao momento e as 
+respetivas ações de mitigação, de forma a assegurar um acompanhamento estruturado e 
+eficaz do projeto. 
+3.1 Planeamento das Atividades 
+Esta secção apresenta o planeamento das principais atividades a desenvolver ao longo 
+do projeto de dissertação, bem como a respetiva distribuição temporal entre novembro de 
+2025 e julho de 2026. O cronograma apresentado na Tabela 1 permite visualizar as diferentes 
+fases do trabalho, desde a elaboração do plano de trabalho e revisão da literatura até ao 
+desenvolvimento da plataforma e redação do relatório final.  
+Tabela 1: Plano de Atividades 
+ 
+ 
+ 
+ 
+ATIVIDADES 
+ 
+ 
+DURAÇÃO 
+Nov/25 
+Dez/25 
+Jan/26 
+Fev/26 
+Mar/26 
+Abri/26 
+Mai/26 
+Jun/26 
+Jul/26 
+Elaboração do Plano de Trabalho          
+Submissão do Plano de Trabalho          
+Revisão da Literatura e Estado de Arte          
+Elaboração do Relatório Intermédio do 
+Trabalho de Conclusão de Mestrado 
+         
+Submissão do Relatório Intermédio do Trabalho 
+de Conclusão de Mestrado 
+         
+Definição de Requisitos e Caracterização dos 
+Dados 
+         
+Desenvolvimento da Plataforma para 
+Monitorização dos Fluxos de Dados 
+         
+ 
+17 
+Demonstração e Avaliação do Protótipo 
+Desenvolvido 
+         
+Elaboração do Relatório Final do Trabalho de 
+Conclusão de Mestrado 
+         
+Submissão do Relatório Final do Trabalho de 
+Conclusão de Mestrado 
+         
+Requisição das provas públicas de Trabalho de 
+Conclusão de Mestrado 
+         
+ 
+3.2 Riscos do Estudo 
+Ao longo do desenvolvimento da presente dissertação poderão surgir alguns riscos e 
+limitações associados às diferentes fases do trabalho, nomeadamente ao acesso e tratamento 
+de dados, integração de tecnologias, desenvolvimento da plataforma e avaliação da solução 
+proposta. Neste sentido, foram identificados os principais riscos do estudo, bem como 
+definidas possíveis ações de mitigação, apresentadas na Tabela 2. 
+Tabela 2: Riscos do Estudo 
+ID Designação do Risco Ação de Mitigação 
+R1 Dificuldade no acesso a dados 
+relevantes para o estudo 
+Definir antecipadamente os requisitos de dados 
+necessários e manter contacto regular com os 
+responsáveis pela disponibilização da informação, 
+garantindo alternativas de dados simulados ou 
+anonimizados caso necessário. 
+R2 Complexidade na integração de 
+diferentes tecnologias e serviços de 
+IA/LLM 
+Realizar uma análise prévia das tecnologias a utilizar e 
+desenvolver protótipos incrementais, validando 
+progressivamente a integração entre os diferentes 
+componentes da plataforma. 
+R3 Limitações na qualidade ou 
+consistência dos dados monitorizados 
+Implementar mecanismos de validação e tratamento 
+de dados, assegurando a deteção de inconsistências, 
+redundâncias ou informação incompleta antes do 
+processamento. 
+R4 Dificuldade na definição dos requisitos 
+funcionais da plataforma 
+Realizar uma análise detalhada do problema e validar 
+regularmente os requisitos definidos com o orientador, 
+ 
+18 
+ajustando-os sempre que necessário ao longo do 
+projeto. 
+R5 Incumprimento dos prazos 
+estabelecidos para o desenvolvimento 
+da dissertação 
+Elaborar um cronograma detalhado das atividades e 
+acompanhar regularmente a evolução do trabalho, 
+redefinindo prioridades sempre que ocorram desvios 
+ao planeamento inicial. 
+R6 Dificuldade em avaliar o impacto e 
+eficácia da solução desenvolvida 
+Definir métricas e critérios de avaliação desde as fases 
+iniciais do projeto, permitindo medir o desempenho da 
+plataforma de forma objetiva. 
+R7 Falhas ou limitações técnicas no 
+desenvolvimento da plataforma 
+Desenvolver a solução de forma modular e 
+incremental, realizando testes frequentes para 
+identificar e corrigir problemas técnicos 
+atempadamente. 
+R8 Falta de conhecimento técnico 
+aprofundado sobre determinadas 
+tecnologias utilizadas 
+Reforçar a revisão da literatura e realizar formações ou 
+exploração prática das tecnologias relevantes antes da 
+sua integração no projeto. 
+ 
+  
+ 
+19 
+4. CONCLUSÕES E TRABALHOS FUTUROS 
+Tendo a presente dissertação como tema a monitorização inteligente de fluxos e 
+processos de dados em meio hospitalar, tornou -se necessário realizar um enquadramento 
+conceptual das principais áreas associadas ao domínio em estudo. Neste sentido, o trabalho 
+desenvolvido incidiu sobre os sistemas de informação hospitalares, os processos e fluxos de 
+dados em saúde, a monitorização operacional, os dashboards para apoio à visualização e 
+tomada de decisão, bem como sobre a utilização de inteligência artificial e m odelos de 
+linguagem de larga escala em contextos de monitorização e automação. 
+A revisão da literatura permitiu compreender que a crescente digitalização dos 
+sistemas de saúde tem vindo a aumentar significativamente a complexidade dos ambientes 
+hospitalares, caracterizados pela coexistência de múltiplos sistemas, grande volume de dados 
+e necessidade de monitorização contínua. Verificou -se igualmente que, apesar da existência 
+de diferentes abordagens de monitorização e visualização de informação, persistem 
+limitações relacionadas com a integração dos sistemas, deteção eficiente de inci dentes e 
+automatização inteligente da análise operacional. 
+Adicionalmente, foi possível analisar o potencial da utilização de dashboards e serviços 
+baseados em inteligência artificial no apoio à interpretação de eventos, análise de logs e 
+geração automática de recomendações, destacando -se a relevância crescente destas 
+tecnologias na melhoria da eficiência operacional e na redução da dependência de 
+intervenção manual. 
+Neste contexto, o trabalho realizado permitiu estabelecer uma base teórica e 
+metodológica sólida para o desenvolvimento da solução proposta no âmbito da presente 
+dissertação, centrada na conceção de uma plataforma de monitorização inteligente aplicada 
+ao c ontexto hospitalar. Espera -se que a solução desenvolvida contribua para melhorar a 
+visibilidade sobre os fluxos de dados, reforçar a capacidade de deteção de falhas e apoiar 
+processos de monitorização mais proativos e eficientes. 
+As próximas etapas da dissertação incidirão sobre a definição detalhada dos requisitos 
+da plataforma, conceção da arquitetura da solução e desenvolvimento dos mecanismos de 
+monitorização, visualização e automação inteligente suportados por serviços de IA/L LM. 
+Posteriormente, será realizada a demonstração e avaliação do artefacto desenvolvido, 
+ 
+20 
+procurando analisar o seu impacto na eficiência operacional, na gestão de incidentes e no 
+apoio à tomada de decisão em ambientes hospitalares.
+ 
+21 
+REFERÊNCIAS 
+ 
+Anukem, S., Ozougwu, L., Ataguba, G., Milos, E., & Orji, R. (2025). AI-Powered Interactive 
+Dashboard: Using Machine Learning and Visual Analytics for Non -Cardiac Surgery 
+Decision Support. 2025 IEEE Conference on Serious Games and Applications for Health 
+(SeGAH), 01–08. https://doi.org/10.1109/SeGAH65397.2025.11168427 
+Barrento, M., de Castro Neto, M., & Caiado, J. C. (2013). Business intelligence admission to 
+hospital emergency. 2013 8th Iberian Conference on Information Systems and 
+Technologies (CISTI), 1–5. https://ieeexplore.ieee.org/document/6615824/ 
+Batubara, H., Lesmana, R. G., Dharmastiti, R., & Herliansyah, M. K. (2020). A Proposed Model 
+for Outpatient Care Service Improvement Using the Healthcare Lean Approach and 
+Simulation. 239–244. https://doi.org/10.2991/assehr.k.200515.041 
+Deshmukh, S., & Pacharaney, U. (2025). Leveraging Patient Flow Data to Reduce Hospital 
+Readmissions: A Study Using Medical Dashboards. 2025 4th International Conference 
+on Sentiment Analysis and Deep Learning (ICSADL) , 1662 –1665. 
+https://doi.org/10.1109/ICSADL65848.2025.10933252 
+Dowding, D., Randell, R., Gardner, P., Fitzpatrick, G., Dykes, P., Favela, J., Hamer, S., 
+Whitewood-Moores, Z., Hardiker, N., Borycki, E., & Currie, L. (2015). Dashboards for 
+improving patient care: Review of the literature. International Journal of Medical 
+Informatics, 84(2), 87–100. https://doi.org/10.1016/j.ijmedinf.2014.10.001 
+Ezeanyim, O. C., Nwabunwanne, E. C., Igbokwe, N. C., & Nwamekwe, C. O. (s.d.). Patient Flow 
+and Service Efficiency in Public Hospitals. 
+ 
+22 
+Global strategy on digital health 2020 -2025. (s.d.). Obtido 28 de fevereiro de 2026, de 
+https://www.who.int/publications/i/item/9789240020924 
+Imran, S., Mahmood, T., Morshed, A., & Sellis, T. (2021). Big data analytics in healthcare − A 
+systematic literature review and roadmap for practical implementation. IEEE/CAA 
+Journal of Automatica Sinica, 8(1), 1–22. https://doi.org/10.1109/JAS.2020.1003384 
+Kor, V. (2026). Advancing Digital Health, Big Data, and Health Informatics: Transformative 
+Implications for Contempo rary Healthcare Systems. Library of Frontline Medical 
+Sciences and Pharmaceutical Journal, 6(03), 44–46. 
+Lhamo, T., Gyeltshen, D., Tshering, U., Choden, P., & Kumar, S. (2024). AI FOR ANOMALY 
+DETECTION IN HEALTH CLOUD INFRASTRUCTURE. 
+Maity, S., & Saikia, M. J. (2025). Large Language Models in Healthcare and Medical 
+Applications: A Review. Bioengineering, 12(6), 631. 
+https://doi.org/10.3390/bioengineering12060631 
+Mishra, S., & Datla, L. S. (2025). Real -Time Predictive Analytics for Continuous Monitoring Of 
+Patient Electronic Health Records. American International Journal of Computer Science 
+and Technology, 7(5), 81–91. https://doi.org/10.63282/3117-5481/AIJCST-V7I5P107 
+Muqing, N., Wenting, L., Xiaole, G., Zhiyuan, Z., & Jingjuan, W. (2023). IoT, Heterogeneous 
+Data Processing, and AI Automation Synergy for Improved Efficiency and Maintenance: 
+Revolutionizing Hospital Operations. 2023 IEEE International Conference on Signal 
+Processing, Communications and Computing (ICSPCC) , 1 –6. 
+https://doi.org/10.1109/ICSPCC59353.2023.10400261 
+Park, A., Jung, S. Y., Yune, I., & Lee, H. -Y. (2025). Applying Robotic Process Automation to 
+Monitor Business Processes in Hospital Information Systems: Mixed Method 
+Approach. JMIR Medical Informatics, 13(1), e59801. https://doi.org/10.2196/59801 
+ 
+23 
+Remil, Y., Bendimerad, A., Mathonat, R., & Kaytoue, M. (2024). AIOps Solutions for Incident 
+Management: Technical Guidelines and A Comprehensive Literature Review  
+(arXiv:2404.01363). arXiv. https://doi.org/10.48550/arXiv.2404.01363 
+Rongali, S. K. (2025). Zero -Trust Cloud Frameworks for Secure AI Integration and Healthcare 
+Data Interoperability. 2025 IEEE International Conference on Communication Networks 
+and Computing (CNC) , 1488 –1492. 
+https://doi.org/10.1109/CNC68716.2025.11484572 
+Samara, M. N., & Harry, K. D. (2025). Leveraging Kaizen with Process Mining in Healthcare 
+Settings: A Conceptual Framework for Data -Driven Continuous Improvement. 
+Healthcare, 13(8), 941. https://doi.org/10.3390/healthcare13080941 
+Sheikh, A., Sood, H. S., & Bates, D. W. (2015). Leveraging health information technology to 
+achieve the «triple aim» of healthcare reform. Journal of the American Medical 
+Informatics Association: JAMIA , 22(4), 849 –856. 
+https://doi.org/10.1093/jamia/ocv022 
+Srinivas, S., Kirk, B., Zendejas, J., Espino, M., Boskovich, M., Bari, A., Dajani, K., & Alzahrani, N. 
+(2025). AI-Augmented SOC: A Survey of LLMs and Agents for Security Automation. 
+Journal of Cybersecurity and Privacy, 5(4). https://doi.org/10.3390/jcp5040095 
+Sureephong, P., Jaikhow, O., Thianprathum, P., Chernbumroong, S., Sakarinkhul, P., & Wicha, 
+S. (2025). Developing an Exercise Monitoring Dashboard Prototype through Joint 
+Application Design. 2025 International Conference on Software, Knowledge, 
+Information Management & Applications (SKIMA) , 1 –6. 
+https://doi.org/10.1109/SKIMA66621.2025.11155660 
+Wisedsri, P., Anutariya, C., Sujarae, A., Vachalathiti, R., & Bovonsunthonchai, S. (2024). Data 
+Analytics and Visualization in Bimanual Rehabilitation Monitoring Systems: A User -
+ 
+24 
+Centered Design Approach to Healthcare Professionals Decision Support. 2024 
+International Conference on Electrical Engineering and Informatics (ICELTICs) , 46–50. 
+https://doi.org/10.1109/ICELTICs62730.2024.10776145 
+ 
+25 
+APÊNDICE I 
+Até ao presente momento, não existe conteúdo a ser incorporado no Apêndice. 
+  
+ 
+26 
+ANEXO I 
+Até ao presente momento, não existe conteúdo a ser incorporado nos Anexos. 
