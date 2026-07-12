@@ -32,10 +32,35 @@ public class GlobalExceptionHandler {
                 .body(ApiError.of(400, "MALFORMED_REQUEST", "Corpo do pedido inválido ou mal formado", List.of()));
     }
 
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiError> handleDomainNotFound(NotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiError.of(404, "NOT_FOUND", ex.getMessage(), List.of()));
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiError.of(401, "UNAUTHORIZED", ex.getMessage(), List.of()));
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiError> handleConflict(ConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiError.of(409, "CONFLICT", ex.getMessage(), List.of()));
+    }
+
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(NoResourceFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiError.of(404, "NOT_FOUND", "Recurso não encontrado", List.of()));
+    }
+
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ApiError> handleResponseStatus(org.springframework.web.server.ResponseStatusException ex) {
+        int status = ex.getStatusCode().value();
+        return ResponseEntity.status(status)
+                .body(ApiError.of(status, "REQUEST_ERROR", ex.getReason(), List.of()));
     }
 
     @ExceptionHandler(Exception.class)

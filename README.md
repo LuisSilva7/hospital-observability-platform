@@ -9,6 +9,7 @@ Serviços hospitalares simulados enviam logs JSON por HTTP; a plataforma armazen
 ```
 backend/     Spring Boot 3.5 (Java 21) — API REST, ingestão, regras, alertas
 frontend/    Next.js 16 + TypeScript — interface web
+simulator/   Node — simulador de serviços hospitalares (envia logs sintéticos)
 docs/        Documento de visão e relatório intermédio da dissertação
 docker-compose.yml   PostgreSQL 16 + n8n
 ```
@@ -57,6 +58,9 @@ cd backend && ./mvnw test   # requer o PostgreSQL do docker compose a correr
 ## Estado
 
 - ✅ Módulo 0 — Fundação (infra, health check ponta a ponta, navegação)
-- ⏳ Módulo 1 — Gestão de serviços monitorizados (próximo)
+- ✅ Módulo 1 — Gestão de serviços monitorizados (CRUD, API keys com hash, endpoint de ingestão copiável)
+- ✅ Módulo 2 — Ingestão e normalização de logs (X-API-Key, payload JSONB preservado)
+- ✅ Módulo 3 — Simulador de serviços (3 perfis, cenários normal/error-spike/latency/silence — ver `simulator/README.md`)
+- ⏳ Módulo 4 — Exploração de logs e visão geral (próximo)
 
 Roadmap completo em [CLAUDE.md](CLAUDE.md) e em `docs/documento-visao.txt`.

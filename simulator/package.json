@@ -1,0 +1,11 @@
+{
+  "name": "hop-simulator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Simulador de serviços hospitalares para a Hospital Observability Platform",
+  "scripts": {
+    "setup": "node setup.js",
+    "start": "node index.js"
+  }
+}

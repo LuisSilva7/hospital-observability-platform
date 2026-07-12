@@ -1,0 +1,14 @@
+{
+  "baseUrl": "http://localhost:8080",
+  "services": [
+    {
+      "profile": "laboratory",
+      "name": "Laboratory Integration Service",
+      "serviceId": "<uuid do serviço>",
+      "apiKey": "<api key mostrada na criação>",
+      "intervalSeconds": 10,
+      "scenario": "normal",
+      "levelWeights": { "INFO": 0.9, "WARN": 0.08, "ERROR": 0.02 }
+    }
+  ]
+}

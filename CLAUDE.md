@@ -19,7 +19,7 @@ Ciclo a demonstrar: serviço simulado → POST log → regra → alerta → webh
 | `backend/` | Java 21, Spring Boot 3.5, Maven | camadas controller/service/repository/domain; Flyway em `src/main/resources/db/migration`; OpenAPI (springdoc) em `/swagger-ui` |
 | `frontend/` | Next.js 16, TypeScript, Tailwind 4, App Router | **Atenção: Next 16 tem breaking changes — ver `frontend/AGENTS.md`**; helper API em `lib/api.ts`; polling (SSE só mais tarde) |
 | `docker-compose.yml` | PostgreSQL 16 (:5432) + n8n (:5678) | dados em volumes |
-| `simulator/` | (a criar no Módulo 3) script standalone | |
+| `simulator/` | Node 20+ standalone, sem deps | `setup.js` (regista serviços, escreve config.json) + `index.js` (loop de envio); ver `simulator/README.md` |
 
 ## Comandos (macOS)
 
@@ -45,9 +45,9 @@ Health: `GET http://localhost:8080/api/health`. Config por env vars — ver `.en
 ## Estado dos módulos
 
 - [x] **M0 Fundação** — compose, Spring Boot + Flyway + health + CORS + erros globais + swagger, Next.js com sidebar e páginas placeholder, health card ponta a ponta
-- [ ] **M1 Serviços** — CRUD Service, API keys (hash), endpoint copiável
-- [ ] **M2 Ingestão** — `POST /api/v1/ingest/{serviceId}/logs`, X-API-Key, JSONB, lastSeenAt
-- [ ] **M3 Simulador** — 3 serviços sintéticos, cenários: silêncio, pico de erros, latência
+- [x] **M1 Serviços** — CRUD Service (`/api/services`), API keys SHA-256 com prefixo visível, regeneração, ativar/desativar, UI lista/criar/detalhe com key mostrada 1x e exemplo curl
+- [x] **M2 Ingestão** — `POST /api/v1/ingest/{serviceId}/logs` com X-API-Key (401 se inválida/em falta/de outro serviço/serviço inativo), payload JSONB preservado + campos normalizados (`LogNormalizer`: timestamp/level/message/eventType), atualiza lastSeenAt e lastUsedAt
+- [x] **M3 Simulador** — `simulator/` Node sem deps: `node setup.js` regista os 3 serviços demo e escreve `config.json` (gitignored, tem keys); `node index.js --scenario <perfil>=<normal|error-spike|latency|silence>`; perfis: laboratory/admissions/notifications
 - [ ] **M4 Exploração** — Log Explorer (filtros/paginação), dashboard com estado dos serviços
 - [ ] **M5 Regras** — EVENT_MATCH, NO_ACTIVITY, COUNT_THRESHOLD; wizard na UI; cooldown
 - [ ] **M6 Alertas** — OPEN/ACKNOWLEDGED/RESOLVED, timeline, logs associados
@@ -64,5 +64,8 @@ Modelo de dados alvo (doc de visão §7): Service, ServiceApiKey, LogEvent, Moni
 - LLM: Anthropic Claude atrás de interface abstrata; `LLM_API_KEY` em env var.
 - Simulador: script standalone configurado por ficheiro (UI opcional depois).
 - UI em **português**; código/identificadores em inglês.
+- Entidade `Service` chama-se `MonitoredService` em Java (evita colisão com `@Service` do Spring); tabela é `service`.
+- Testes de integração correm contra o Postgres de dev e podem deixar registos `svc-*` — limpar ou migrar para BD de teste dedicada (melhoria futura).
+- Camada de negócio usa `@Component` (`ServiceManager`) em vez de `@Service` pelo mesmo motivo de colisão.
 
 **Atualizar este ficheiro (estado dos módulos e decisões) no fim de cada módulo.**
