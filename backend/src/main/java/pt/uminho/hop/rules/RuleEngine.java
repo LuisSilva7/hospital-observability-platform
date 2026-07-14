@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Component
-public class RuleEngine implements RuleTriggerHandler {
+public class RuleEngine {
 
     private static final Logger log = LoggerFactory.getLogger(RuleEngine.class);
 
@@ -28,15 +28,18 @@ public class RuleEngine implements RuleTriggerHandler {
     private final RuleEvaluationRepository evaluations;
     private final MonitoredServiceRepository services;
     private final LogEventRepository logEvents;
+    private final List<RuleTriggerHandler> triggerHandlers;
 
     public RuleEngine(MonitorRuleRepository rules,
                       RuleEvaluationRepository evaluations,
                       MonitoredServiceRepository services,
-                      LogEventRepository logEvents) {
+                      LogEventRepository logEvents,
+                      List<RuleTriggerHandler> triggerHandlers) {
         this.rules = rules;
         this.evaluations = evaluations;
         this.services = services;
         this.logEvents = logEvents;
+        this.triggerHandlers = triggerHandlers;
     }
 
     /** Chamado após cada ingestão: avalia EVENT_MATCH e COUNT_THRESHOLD do serviço. */
@@ -141,18 +144,22 @@ public class RuleEngine implements RuleTriggerHandler {
     private void trigger(MonitorRule rule, UUID logEventId, String details, OffsetDateTime now) {
         rule.setLastTriggeredAt(now);
         rules.save(rule);
-        onRuleTriggered(rule, logEventId, details);
-        log.info("Regra disparada: '{}' ({}) — {}", rule.getName(), rule.getType(), details);
-    }
 
-    @Override
-    public void onRuleTriggered(MonitorRule rule, UUID logEventId, String details) {
         RuleEvaluation evaluation = new RuleEvaluation();
         evaluation.setRuleId(rule.getId());
         evaluation.setServiceId(rule.getServiceId());
         evaluation.setLogEventId(logEventId);
         evaluation.setDetails(details);
         evaluations.save(evaluation);
-        // Módulo 6: criação de alerta. Módulo 7: automações.
+
+        // handlers registados: AlertManager (M6); automações chegam no M7
+        for (RuleTriggerHandler handler : triggerHandlers) {
+            try {
+                handler.onRuleTriggered(rule, logEventId, details);
+            } catch (Exception e) {
+                log.error("Handler {} falhou para a regra {}", handler.getClass().getSimpleName(), rule.getId(), e);
+            }
+        }
+        log.info("Regra disparada: '{}' ({}) — {}", rule.getName(), rule.getType(), details);
     }
 }

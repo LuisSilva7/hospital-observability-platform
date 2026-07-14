@@ -18,9 +18,12 @@ import java.util.UUID;
 public class OverviewController {
 
     private final MonitoredServiceRepository services;
+    private final pt.uminho.hop.alerts.repository.AlertRepository alerts;
 
-    public OverviewController(MonitoredServiceRepository services) {
+    public OverviewController(MonitoredServiceRepository services,
+                              pt.uminho.hop.alerts.repository.AlertRepository alerts) {
         this.services = services;
+        this.alerts = alerts;
     }
 
     public record ServiceSummary(
@@ -48,8 +51,9 @@ public class OverviewController {
                 "totalServices", summaries.size(),
                 "byStatus", byStatus,
                 "services", summaries,
-                // Alertas chegam no Módulo 6; o campo já existe para a UI não mudar de contrato
-                "activeAlerts", 0
+                "activeAlerts", alerts.countByStatusIn(List.of(
+                        pt.uminho.hop.alerts.domain.Alert.Status.OPEN,
+                        pt.uminho.hop.alerts.domain.Alert.Status.ACKNOWLEDGED))
         );
     }
 }

@@ -70,10 +70,13 @@ export default function DashboardPage() {
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
           <p className="text-xs uppercase text-gray-500">Alertas ativos</p>
-          <p className="mt-1 text-3xl font-semibold">
+          <p
+            className={`mt-1 text-3xl font-semibold ${
+              (overview?.activeAlerts ?? 0) > 0 ? "text-red-600" : ""
+            }`}
+          >
             {overview?.activeAlerts ?? "—"}
           </p>
-          <p className="mt-1 text-xs text-gray-400">Módulo 6</p>
         </div>
       </div>
 

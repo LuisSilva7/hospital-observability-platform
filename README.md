@@ -63,6 +63,7 @@ cd backend && ./mvnw test   # requer o PostgreSQL do docker compose a correr
 - ✅ Módulo 3 — Simulador de serviços (3 perfis, cenários normal/error-spike/latency/silence — ver `simulator/README.md`)
 - ✅ Módulo 4 — Log Explorer (filtros, pesquisa, paginação, payload original) e dashboard com estado dos serviços
 - ✅ Módulo 5 — Regras configuráveis (EVENT_MATCH, NO_ACTIVITY, COUNT_THRESHOLD) com wizard, cooldown e histórico de disparos
-- ⏳ Módulo 6 — Alertas e incidentes (próximo)
+- ✅ Módulo 6 — Alertas com ciclo de vida (OPEN → ACKNOWLEDGED → RESOLVED), timeline, deduplicação e logs associados
+- ⏳ Módulo 7 — Automações e integração n8n (próximo)
 
 Roadmap completo em [CLAUDE.md](CLAUDE.md) e em `docs/documento-visao.txt`.
