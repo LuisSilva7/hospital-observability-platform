@@ -31,13 +31,16 @@ public class AlertManager implements RuleTriggerHandler {
     private final AlertRepository alerts;
     private final AlertEventRepository events;
     private final AlertLogLinkRepository logLinks;
+    private final org.springframework.context.ApplicationEventPublisher publisher;
 
     public AlertManager(AlertRepository alerts,
                         AlertEventRepository events,
-                        AlertLogLinkRepository logLinks) {
+                        AlertLogLinkRepository logLinks,
+                        org.springframework.context.ApplicationEventPublisher publisher) {
         this.alerts = alerts;
         this.events = events;
         this.logLinks = logLinks;
+        this.publisher = publisher;
     }
 
     @Override
@@ -63,6 +66,8 @@ public class AlertManager implements RuleTriggerHandler {
         events.save(AlertEvent.of(alert.getId(), AlertEvent.Type.CREATED,
                 "Alerta criado pela regra '" + rule.getName() + "': " + details));
         linkLog(alert.getId(), logEventId);
+        // consumido pelo AutomationExecutor (M7) após o commit da transação
+        publisher.publishEvent(new pt.uminho.hop.automations.AlertCreatedEvent(alert.getId(), rule.getId()));
         log.info("Alerta criado: {} ({})", alert.getTitle(), alert.getId());
     }
 

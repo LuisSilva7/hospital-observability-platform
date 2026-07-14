@@ -57,7 +57,7 @@ export default function AlertDetailPage({
 
   if (!detail) return <p className="text-sm text-gray-400">A carregar…</p>;
 
-  const { alert, timeline, logs } = detail;
+  const { alert, timeline, logs, executions } = detail;
 
   return (
     <div className="max-w-3xl">
@@ -176,6 +176,35 @@ export default function AlertDetailPage({
           )}
         </div>
       </div>
+
+      {executions.length > 0 && (
+        <div className="mt-6 rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="border-b border-gray-200 px-5 py-3 dark:border-gray-800">
+            <h3 className="text-sm font-semibold">
+              Automações executadas ({executions.length})
+            </h3>
+          </div>
+          <ul className="divide-y divide-gray-200 dark:divide-gray-800">
+            {executions.map((e) => (
+              <li key={e.id} className="flex items-center justify-between px-5 py-3 text-sm">
+                <div>
+                  <p>
+                    {e.status === "SUCCESS" ? "✅ Webhook enviado" : "❌ Webhook falhou"}
+                    {e.responseCode != null && (
+                      <span className="text-gray-500"> · HTTP {e.responseCode}</span>
+                    )}
+                    {e.error && <span className="text-red-500"> · {e.error}</span>}
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    {e.attempts} tentativa(s) ·{" "}
+                    {new Date(e.executedAt).toLocaleString("pt-PT")}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {selectedLog && (
         <div

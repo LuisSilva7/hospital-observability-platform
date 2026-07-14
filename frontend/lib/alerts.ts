@@ -30,10 +30,20 @@ export type LinkedLog = {
   payload: string;
 };
 
+export type ExecutionSummary = {
+  id: string;
+  status: "SUCCESS" | "FAILED";
+  attempts: number;
+  responseCode: number | null;
+  error: string | null;
+  executedAt: string;
+};
+
 export type AlertDetail = {
   alert: Alert;
   timeline: TimelineEvent[];
   logs: LinkedLog[];
+  executions: ExecutionSummary[];
 };
 
 export const STATUS_LABELS: Record<AlertStatus, string> = {

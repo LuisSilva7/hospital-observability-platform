@@ -29,19 +29,22 @@ public class AlertController {
     private final LogEventRepository logEvents;
     private final MonitoredServiceRepository services;
     private final AlertManager manager;
+    private final pt.uminho.hop.automations.repository.ActionExecutionRepository actionExecutions;
 
     public AlertController(AlertRepository alerts,
                            AlertEventRepository events,
                            AlertLogLinkRepository logLinks,
                            LogEventRepository logEvents,
                            MonitoredServiceRepository services,
-                           AlertManager manager) {
+                           AlertManager manager,
+                           pt.uminho.hop.automations.repository.ActionExecutionRepository actionExecutions) {
         this.alerts = alerts;
         this.events = events;
         this.logLinks = logLinks;
         this.logEvents = logEvents;
         this.services = services;
         this.manager = manager;
+        this.actionExecutions = actionExecutions;
     }
 
     public record AlertResponse(
@@ -53,8 +56,13 @@ public class AlertController {
 
     public record LinkedLog(UUID id, OffsetDateTime receivedAt, String level, String message, String payload) {}
 
+    public record ExecutionSummary(
+            UUID id, String status, int attempts, Integer responseCode,
+            String error, OffsetDateTime executedAt) {}
+
     public record AlertDetailResponse(
-            AlertResponse alert, List<TimelineEvent> timeline, List<LinkedLog> logs) {}
+            AlertResponse alert, List<TimelineEvent> timeline, List<LinkedLog> logs,
+            List<ExecutionSummary> executions) {}
 
     @GetMapping
     public List<AlertResponse> list(@RequestParam(required = false) Alert.Status status) {
@@ -81,7 +89,12 @@ public class AlertController {
                 .map(this::toLinkedLog)
                 .toList();
 
-        return new AlertDetailResponse(toResponse(alert, serviceNames()), timeline, logs);
+        List<ExecutionSummary> execs = actionExecutions.findByAlertIdOrderByExecutedAtDesc(id).stream()
+                .map(e -> new ExecutionSummary(e.getId(), e.getStatus().name(), e.getAttempts(),
+                        e.getResponseCode(), e.getError(), e.getExecutedAt()))
+                .toList();
+
+        return new AlertDetailResponse(toResponse(alert, serviceNames()), timeline, logs, execs);
     }
 
     @PostMapping("/{id}/acknowledge")

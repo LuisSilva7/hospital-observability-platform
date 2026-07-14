@@ -51,11 +51,16 @@ Health: `GET http://localhost:8080/api/health`. Config por env vars — ver `.en
 - [x] **M4 Exploração** — `GET /api/logs` (filtros serviceId/level/text/from/to + paginação; text pesquisa message e payload via `@Formula payload::text`), `GET /api/overview`; estado derivado (`ServiceManager.deriveStatus`: INACTIVE/UNKNOWN/SILENT/HEALTHY); UI: Log Explorer com modal de payload + dashboard com cartões e lista de estado
 - [x] **M5 Regras** — `RuleEngine` (EVENT_MATCH/COUNT_THRESHOLD avaliadas na ingestão; NO_ACTIVITY via `@Scheduled` 30s) + `ConditionMatcher` (EQUALS/NOT_EQUALS/CONTAINS/GT/LT, fieldPath aninhado com "."); cooldown por regra; disparos registados em `rule_evaluation`; interface `RuleTriggerHandler` é o hook para M6/M7; CRUD `/api/rules` + wizard 4 passos na UI + detalhe com histórico
 - [x] **M6 Alertas** — `AlertManager` implementa `RuleTriggerHandler` (RuleEngine chama todos os handlers registados); dedup: disparos com alerta não-resolvido da mesma regra anexam TRIGGER_REPEATED à timeline em vez de criar novo; ciclo OPEN→ACKNOWLEDGED→RESOLVED (409 em transições inválidas); `/api/alerts` + detalhe com timeline e logs associados na UI; overview conta alertas ativos
-- [ ] **M7 Automações** — webhook + n8n, executor assíncrono, retries, histórico
+- [x] **M7 Automações** — `AutomationExecutor` (@Async, consome `AlertCreatedEvent` publicado pelo AlertManager após commit): webhook por automação (config JSONB: url/method/headers/payloadTemplate com placeholders {{title}} etc.), 3 tentativas com backoff 2s, resultado em `action_execution`; **HTTP/1.1 forçado — HTTP/2 dá timeout com o n8n**; `/api/automations` CRUD + `/test` síncrono; UI: página Automações (criar/testar/ativar) + secção "Automações executadas" no detalhe do alerta
 - [ ] **M8 IA** — "Analisar com IA": resumo, causa provável, evidências, recomendações (interface abstrata de LLM; provider Anthropic)
 - [ ] **M9 Config/auditoria** — settings LLM/n8n, AuditEntry
 
 Modelo de dados alvo (doc de visão §7): Service, ServiceApiKey, LogEvent, MonitorRule, RuleCondition, Alert, AlertEvent, AlertLogLink, Automation, AutomationAction, ActionExecution, AIAnalysis, AuditEntry.
+
+## n8n (dev local)
+
+- Conta de dono criada: `admin@hop.local` / `HopDev2026!` (só dev local, UI em http://localhost:5678).
+- Workflow "Alerta Hospitalar" (id `ZgYYhFbKPOHRVEKr`), ativo, com nó Webhook POST em `http://localhost:5678/webhook/alerta-hospitalar` — é este URL que as automações usam. Execuções visíveis na UI do n8n em "Executions".
 
 ## Decisões tomadas
 

@@ -64,6 +64,7 @@ cd backend && ./mvnw test   # requer o PostgreSQL do docker compose a correr
 - ✅ Módulo 4 — Log Explorer (filtros, pesquisa, paginação, payload original) e dashboard com estado dos serviços
 - ✅ Módulo 5 — Regras configuráveis (EVENT_MATCH, NO_ACTIVITY, COUNT_THRESHOLD) com wizard, cooldown e histórico de disparos
 - ✅ Módulo 6 — Alertas com ciclo de vida (OPEN → ACKNOWLEDGED → RESOLVED), timeline, deduplicação e logs associados
-- ⏳ Módulo 7 — Automações e integração n8n (próximo)
+- ✅ Módulo 7 — Automações: webhooks (n8n) executados na criação de alertas, com retries e histórico de execuções
+- ⏳ Módulo 8 — Insights de IA (próximo)
 
 Roadmap completo em [CLAUDE.md](CLAUDE.md) e em `docs/documento-visao.txt`.
