@@ -44,6 +44,7 @@ public class AutomationExecutor {
     private final AlertRepository alerts;
     private final MonitoredServiceRepository services;
     private final ObjectMapper mapper;
+    private final pt.uminho.hop.audit.AuditTrail audit;
     private final HttpClient http = HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_1_1)
             .connectTimeout(HTTP_TIMEOUT)
@@ -53,12 +54,14 @@ public class AutomationExecutor {
                               ActionExecutionRepository executions,
                               AlertRepository alerts,
                               MonitoredServiceRepository services,
-                              ObjectMapper mapper) {
+                              ObjectMapper mapper,
+                              pt.uminho.hop.audit.AuditTrail audit) {
         this.automations = automations;
         this.executions = executions;
         this.alerts = alerts;
         this.services = services;
         this.mapper = mapper;
+        this.audit = audit;
     }
 
     @Async
@@ -75,6 +78,17 @@ public class AutomationExecutor {
 
     /** Executa uma ação para um alerta (real ou de teste) e persiste o resultado. */
     public ActionExecution execute(AutomationAction action, Alert alert) {
+        ActionExecution execution = doExecute(action, alert);
+        audit.system("ACTION_EXECUTED", "AUTOMATION",
+                action.getAutomation() == null ? null : action.getAutomation().getId(),
+                java.util.Map.of(
+                        "status", execution.getStatus().name(),
+                        "attempts", execution.getAttempts(),
+                        "alertTitle", alert.getTitle()));
+        return execution;
+    }
+
+    private ActionExecution doExecute(AutomationAction action, Alert alert) {
         ActionExecution execution = new ActionExecution();
         execution.setActionId(action.getId());
         execution.setAlertId(alert.getId());

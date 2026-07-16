@@ -4,6 +4,7 @@ import Link from "next/link";
 import { use, useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import {
+  AIAnalysis,
   AlertDetail,
   LinkedLog,
   STATUS_LABELS,
@@ -11,6 +12,18 @@ import {
   TIMELINE_ICONS,
 } from "@/lib/alerts";
 import { SEVERITY_LABELS, severityColor } from "@/lib/rules";
+
+// apiFetch lança Error("API <status>: <corpo JSON>"); extrai o campo message do corpo
+function extractApiMessage(e: unknown): string | null {
+  if (!(e instanceof Error)) return null;
+  const idx = e.message.indexOf(": ");
+  if (idx === -1) return null;
+  try {
+    return JSON.parse(e.message.slice(idx + 2)).message ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export default function AlertDetailPage({
   params,
@@ -21,6 +34,9 @@ export default function AlertDetailPage({
   const [detail, setDetail] = useState<AlertDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedLog, setSelectedLog] = useState<LinkedLog | null>(null);
+  const [analyses, setAnalyses] = useState<AIAnalysis[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     apiFetch<AlertDetail>(`/api/alerts/${id}`)
@@ -31,11 +47,33 @@ export default function AlertDetailPage({
       .catch(() => setError("Alerta não encontrado."));
   }, [id]);
 
+  const loadAnalyses = useCallback(() => {
+    apiFetch<AIAnalysis[]>(`/api/alerts/${id}/analyses`)
+      .then(setAnalyses)
+      .catch(() => {});
+  }, [id]);
+
   useEffect(() => {
     load();
+    loadAnalyses();
     const interval = setInterval(load, 5_000);
     return () => clearInterval(interval);
-  }, [load]);
+  }, [load, loadAnalyses]);
+
+  const runAnalysis = async () => {
+    setAnalyzing(true);
+    setAiError(null);
+    try {
+      await apiFetch<AIAnalysis>(`/api/alerts/${id}/analyses`, {
+        method: "POST",
+      });
+      loadAnalyses();
+    } catch (e) {
+      setAiError(extractApiMessage(e) ?? "Falha ao gerar a análise com IA.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   const act = async (action: "acknowledge" | "resolve") => {
     await apiFetch(`/api/alerts/${id}/${action}`, { method: "POST" });
@@ -205,6 +243,86 @@ export default function AlertDetailPage({
           </ul>
         </div>
       )}
+
+      <div className="mt-6 rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-800">
+          <h3 className="text-sm font-semibold">
+            Análise com IA{analyses.length > 0 && ` (${analyses.length})`}
+          </h3>
+          <button
+            onClick={runAnalysis}
+            disabled={analyzing}
+            className="rounded-md bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {analyzing ? "A analisar…" : "✨ Analisar com IA"}
+          </button>
+        </div>
+
+        {aiError && (
+          <p className="mx-5 mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+            {aiError}
+          </p>
+        )}
+
+        {analyses.length === 0 ? (
+          <p className="px-5 py-8 text-center text-sm text-gray-400">
+            {analyzing
+              ? "A pedir análise ao modelo — pode demorar alguns segundos…"
+              : "Ainda sem análises. Usa o botão para gerar um resumo, causa provável, evidências e recomendações a partir dos logs deste alerta."}
+          </p>
+        ) : (
+          <ul className="divide-y divide-gray-200 dark:divide-gray-800">
+            {analyses.map((a) => (
+              <li key={a.id} className="px-5 py-4">
+                {a.status === "FAILED" ? (
+                  <p className="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+                    ❌ Análise falhou: {a.error ?? "erro desconhecido"}
+                  </p>
+                ) : (
+                  a.output && (
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <p className="font-semibold">Resumo</p>
+                        <p className="mt-0.5 text-gray-700 dark:text-gray-200">
+                          {a.output.summary}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold">Causa provável</p>
+                        <p className="mt-0.5 text-gray-700 dark:text-gray-200">
+                          {a.output.probableCause}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold">Evidências</p>
+                        <ul className="mt-0.5 list-disc space-y-0.5 pl-5 text-gray-700 dark:text-gray-200">
+                          {a.output.evidence.map((e, i) => (
+                            <li key={i}>{e}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="font-semibold">Recomendações</p>
+                        <ul className="mt-0.5 list-disc space-y-0.5 pl-5 text-gray-700 dark:text-gray-200">
+                          {a.output.recommendations.map((r, i) => (
+                            <li key={i}>{r}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )
+                )}
+                <p className="mt-3 text-xs text-gray-400">
+                  {a.provider}
+                  {a.model && ` · ${a.model}`} ·{" "}
+                  {new Date(a.createdAt).toLocaleString("pt-PT")} · Sugestão
+                  gerada por IA — confirma antes de agir.
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {selectedLog && (
         <div

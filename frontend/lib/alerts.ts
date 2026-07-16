@@ -46,6 +46,26 @@ export type AlertDetail = {
   executions: ExecutionSummary[];
 };
 
+export type AnalysisOutput = {
+  summary: string;
+  probableCause: string;
+  evidence: string[];
+  recommendations: string[];
+};
+
+export type AIAnalysis = {
+  id: string;
+  alertId: string;
+  status: "SUCCESS" | "FAILED";
+  provider: string;
+  model: string | null;
+  promptVersion: string;
+  inputLogIds: string[];
+  output: AnalysisOutput | null;
+  error: string | null;
+  createdAt: string;
+};
+
 export const STATUS_LABELS: Record<AlertStatus, string> = {
   OPEN: "Aberto",
   ACKNOWLEDGED: "Reconhecido",

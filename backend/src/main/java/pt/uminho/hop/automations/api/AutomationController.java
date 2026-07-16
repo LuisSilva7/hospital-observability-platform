@@ -34,17 +34,20 @@ public class AutomationController {
     private final ActionExecutionRepository executions;
     private final AutomationExecutor executor;
     private final ObjectMapper mapper;
+    private final pt.uminho.hop.audit.AuditTrail audit;
 
     public AutomationController(AutomationRepository automations,
                                 MonitorRuleRepository rules,
                                 ActionExecutionRepository executions,
                                 AutomationExecutor executor,
-                                ObjectMapper mapper) {
+                                ObjectMapper mapper,
+                                pt.uminho.hop.audit.AuditTrail audit) {
         this.automations = automations;
         this.rules = rules;
         this.executions = executions;
         this.executor = executor;
         this.mapper = mapper;
+        this.audit = audit;
     }
 
     public record WebhookConfig(
@@ -76,7 +79,9 @@ public class AutomationController {
         }
         Automation automation = new Automation();
         apply(automation, request);
-        return toResponse(automations.save(automation));
+        AutomationResponse response = toResponse(automations.save(automation));
+        audit.user("AUTOMATION_CREATED", "AUTOMATION", response.id(), Map.of("name", response.name()));
+        return response;
     }
 
     @GetMapping
@@ -100,22 +105,31 @@ public class AutomationController {
         }
         Automation automation = find(id);
         apply(automation, request);
-        return toResponse(automations.save(automation));
+        AutomationResponse response = toResponse(automations.save(automation));
+        audit.user("AUTOMATION_UPDATED", "AUTOMATION", id, Map.of("name", response.name()));
+        return response;
     }
 
     @PatchMapping("/{id}/enabled")
     @Transactional
     public AutomationResponse setEnabled(@PathVariable UUID id, @RequestBody Map<String, Boolean> body) {
         Automation automation = find(id);
-        automation.setEnabled(Boolean.TRUE.equals(body.get("enabled")));
-        return toResponse(automations.save(automation));
+        boolean enabled = Boolean.TRUE.equals(body.get("enabled"));
+        automation.setEnabled(enabled);
+        AutomationResponse response = toResponse(automations.save(automation));
+        audit.user(enabled ? "AUTOMATION_ENABLED" : "AUTOMATION_DISABLED", "AUTOMATION", id,
+                Map.of("name", response.name()));
+        return response;
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional
     public void delete(@PathVariable UUID id) {
-        automations.delete(find(id));
+        Automation automation = find(id);
+        String name = automation.getName();
+        automations.delete(automation);
+        audit.user("AUTOMATION_DELETED", "AUTOMATION", id, Map.of("name", name));
     }
 
     /** Executa o webhook com um alerta fictício, de forma síncrona, e devolve o resultado. */
@@ -131,6 +145,8 @@ public class AutomationController {
         fake.setSeverity(rule.getSeverity());
 
         ActionExecution result = executor.execute(automation.getActions().get(0), fake);
+        audit.user("AUTOMATION_TESTED", "AUTOMATION", id,
+                Map.of("name", automation.getName(), "status", result.getStatus().name()));
         return toExecutionResponse(result);
     }
 

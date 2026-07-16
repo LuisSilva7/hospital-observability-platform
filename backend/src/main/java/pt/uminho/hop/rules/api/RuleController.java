@@ -26,13 +26,16 @@ public class RuleController {
     private final MonitorRuleRepository rules;
     private final RuleEvaluationRepository evaluations;
     private final MonitoredServiceRepository services;
+    private final pt.uminho.hop.audit.AuditTrail audit;
 
     public RuleController(MonitorRuleRepository rules,
                           RuleEvaluationRepository evaluations,
-                          MonitoredServiceRepository services) {
+                          MonitoredServiceRepository services,
+                          pt.uminho.hop.audit.AuditTrail audit) {
         this.rules = rules;
         this.evaluations = evaluations;
         this.services = services;
+        this.audit = audit;
     }
 
     // --- DTOs ---
@@ -70,7 +73,10 @@ public class RuleController {
         validate(request);
         MonitorRule rule = new MonitorRule();
         apply(rule, request);
-        return toResponse(rules.save(rule));
+        RuleResponse response = toResponse(rules.save(rule));
+        audit.user("RULE_CREATED", "RULE", response.id(),
+                Map.of("name", response.name(), "type", response.type().name()));
+        return response;
     }
 
     @GetMapping
@@ -93,22 +99,32 @@ public class RuleController {
         validate(request);
         MonitorRule rule = find(id);
         apply(rule, request);
-        return toResponse(rules.save(rule));
+        RuleResponse response = toResponse(rules.save(rule));
+        audit.user("RULE_UPDATED", "RULE", id,
+                Map.of("name", response.name(), "type", response.type().name()));
+        return response;
     }
 
     @PatchMapping("/{id}/enabled")
     @Transactional
     public RuleResponse setEnabled(@PathVariable UUID id, @RequestBody Map<String, Boolean> body) {
         MonitorRule rule = find(id);
-        rule.setEnabled(Boolean.TRUE.equals(body.get("enabled")));
-        return toResponse(rules.save(rule));
+        boolean enabled = Boolean.TRUE.equals(body.get("enabled"));
+        rule.setEnabled(enabled);
+        RuleResponse response = toResponse(rules.save(rule));
+        audit.user(enabled ? "RULE_ENABLED" : "RULE_DISABLED", "RULE", id,
+                Map.of("name", response.name()));
+        return response;
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional
     public void delete(@PathVariable UUID id) {
-        rules.delete(find(id));
+        MonitorRule rule = find(id);
+        String name = rule.getName();
+        rules.delete(rule);
+        audit.user("RULE_DELETED", "RULE", id, Map.of("name", name));
     }
 
     @GetMapping("/{id}/evaluations")

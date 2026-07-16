@@ -65,6 +65,7 @@ cd backend && ./mvnw test   # requer o PostgreSQL do docker compose a correr
 - ✅ Módulo 5 — Regras configuráveis (EVENT_MATCH, NO_ACTIVITY, COUNT_THRESHOLD) com wizard, cooldown e histórico de disparos
 - ✅ Módulo 6 — Alertas com ciclo de vida (OPEN → ACKNOWLEDGED → RESOLVED), timeline, deduplicação e logs associados
 - ✅ Módulo 7 — Automações: webhooks (n8n) executados na criação de alertas, com retries e histórico de execuções
-- ⏳ Módulo 8 — Insights de IA (próximo)
+- ✅ Módulo 8 — Insights de IA: "Analisar com IA" no detalhe do alerta (resumo, causa provável, evidências, recomendações) via API da Anthropic; requer `LLM_API_KEY`
+- ✅ Módulo 9 — Configuração e auditoria: página com estado das integrações (LLM/n8n, sem expor segredos) e histórico de quem/que processo criou ou alterou serviços, regras, alertas e automações
 
 Roadmap completo em [CLAUDE.md](CLAUDE.md) e em `docs/documento-visao.txt`.

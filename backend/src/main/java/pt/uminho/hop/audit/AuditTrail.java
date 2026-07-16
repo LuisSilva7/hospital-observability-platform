@@ -1,0 +1,57 @@
+package pt.uminho.hop.audit;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import pt.uminho.hop.audit.domain.AuditEntry;
+import pt.uminho.hop.audit.repository.AuditEntryRepository;
+
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * Regista entradas de auditoria (módulo 9). Sem autenticação/multi-utilizador
+ * no MVP, o ator distingue apenas ações humanas via API (USER) de ações do
+ * próprio sistema (SYSTEM: motor de regras, executor de automações).
+ * Nunca registar segredos (API keys, tokens) nos detalhes.
+ */
+@Component
+public class AuditTrail {
+
+    private static final Logger log = LoggerFactory.getLogger(AuditTrail.class);
+
+    private final AuditEntryRepository entries;
+    private final ObjectMapper mapper;
+
+    public AuditTrail(AuditEntryRepository entries, ObjectMapper mapper) {
+        this.entries = entries;
+        this.mapper = mapper;
+    }
+
+    public void user(String action, String entityType, UUID entityId, Map<String, ?> details) {
+        record(AuditEntry.Actor.USER, action, entityType, entityId, details);
+    }
+
+    public void system(String action, String entityType, UUID entityId, Map<String, ?> details) {
+        record(AuditEntry.Actor.SYSTEM, action, entityType, entityId, details);
+    }
+
+    private void record(AuditEntry.Actor actor, String action, String entityType,
+                        UUID entityId, Map<String, ?> details) {
+        try {
+            AuditEntry entry = new AuditEntry();
+            entry.setActor(actor);
+            entry.setAction(action);
+            entry.setEntityType(entityType);
+            entry.setEntityId(entityId);
+            if (details != null && !details.isEmpty()) {
+                entry.setDetails(mapper.writeValueAsString(details));
+            }
+            entries.save(entry);
+        } catch (Exception e) {
+            // auditoria nunca pode partir a operação principal
+            log.error("Falha a registar auditoria {} {}: {}", action, entityId, e.getMessage());
+        }
+    }
+}

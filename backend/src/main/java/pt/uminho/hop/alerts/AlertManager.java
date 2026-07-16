@@ -32,15 +32,18 @@ public class AlertManager implements RuleTriggerHandler {
     private final AlertEventRepository events;
     private final AlertLogLinkRepository logLinks;
     private final org.springframework.context.ApplicationEventPublisher publisher;
+    private final pt.uminho.hop.audit.AuditTrail audit;
 
     public AlertManager(AlertRepository alerts,
                         AlertEventRepository events,
                         AlertLogLinkRepository logLinks,
-                        org.springframework.context.ApplicationEventPublisher publisher) {
+                        org.springframework.context.ApplicationEventPublisher publisher,
+                        pt.uminho.hop.audit.AuditTrail audit) {
         this.alerts = alerts;
         this.events = events;
         this.logLinks = logLinks;
         this.publisher = publisher;
+        this.audit = audit;
     }
 
     @Override
@@ -68,6 +71,9 @@ public class AlertManager implements RuleTriggerHandler {
         linkLog(alert.getId(), logEventId);
         // consumido pelo AutomationExecutor (M7) após o commit da transação
         publisher.publishEvent(new pt.uminho.hop.automations.AlertCreatedEvent(alert.getId(), rule.getId()));
+        // disparos repetidos não são auditados — já ficam na timeline do alerta
+        audit.system("ALERT_CREATED", "ALERT", alert.getId(),
+                java.util.Map.of("title", alert.getTitle(), "ruleId", rule.getId().toString()));
         log.info("Alerta criado: {} ({})", alert.getTitle(), alert.getId());
     }
 
@@ -86,6 +92,7 @@ public class AlertManager implements RuleTriggerHandler {
         alert.setStatus(Alert.Status.ACKNOWLEDGED);
         alert.setAcknowledgedAt(OffsetDateTime.now());
         events.save(AlertEvent.of(alertId, AlertEvent.Type.ACKNOWLEDGED, "Alerta reconhecido pelo operador"));
+        audit.user("ALERT_ACKNOWLEDGED", "ALERT", alertId, java.util.Map.of("title", alert.getTitle()));
         return alerts.save(alert);
     }
 
@@ -98,6 +105,7 @@ public class AlertManager implements RuleTriggerHandler {
         alert.setStatus(Alert.Status.RESOLVED);
         alert.setResolvedAt(OffsetDateTime.now());
         events.save(AlertEvent.of(alertId, AlertEvent.Type.RESOLVED, "Alerta resolvido pelo operador"));
+        audit.user("ALERT_RESOLVED", "ALERT", alertId, java.util.Map.of("title", alert.getTitle()));
         return alerts.save(alert);
     }
 
