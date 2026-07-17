@@ -8,5 +8,7 @@ import java.util.UUID;
 
 public interface ActionExecutionRepository extends JpaRepository<ActionExecution, UUID> {
     List<ActionExecution> findByAlertIdOrderByExecutedAtDesc(UUID alertId);
+    List<ActionExecution> findByAlertIdIn(List<UUID> alertIds);
     List<ActionExecution> findTop50ByActionIdInOrderByExecutedAtDesc(List<UUID> actionIds);
+    long countByExecutedAtGreaterThanEqual(java.time.OffsetDateTime from);
 }

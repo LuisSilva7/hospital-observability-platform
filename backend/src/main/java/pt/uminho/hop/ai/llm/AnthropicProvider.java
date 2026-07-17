@@ -49,13 +49,13 @@ public class AnthropicProvider implements LlmProvider {
     }
 
     @Override
-    public AnalysisResult analyze(String systemPrompt, String userContent) {
-        StructuredMessageCreateParams<AnalysisResult> params = MessageCreateParams.builder()
+    public <T> T generate(String systemPrompt, String userContent, Class<T> outputType) {
+        StructuredMessageCreateParams<T> params = MessageCreateParams.builder()
                 .model(model)
                 .maxTokens(MAX_TOKENS)
                 .thinking(ThinkingConfigAdaptive.builder().build())
                 .system(systemPrompt)
-                .outputConfig(AnalysisResult.class)
+                .outputConfig(outputType)
                 .addUserMessage(userContent)
                 .build();
 

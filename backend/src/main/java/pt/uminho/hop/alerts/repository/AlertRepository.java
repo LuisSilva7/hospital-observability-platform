@@ -11,5 +11,6 @@ public interface AlertRepository extends JpaRepository<Alert, UUID> {
     Optional<Alert> findFirstByRuleIdAndStatusNotOrderByOpenedAtDesc(UUID ruleId, Alert.Status status);
     List<Alert> findByStatusInOrderByOpenedAtDesc(List<Alert.Status> statuses);
     List<Alert> findAllByOrderByOpenedAtDesc();
+    List<Alert> findByOpenedAtGreaterThanEqual(java.time.OffsetDateTime from);
     long countByStatusIn(List<Alert.Status> statuses);
 }

@@ -10,7 +10,38 @@ import {
   Settings,
 } from "@/lib/audit";
 
-const ENTITY_FILTERS = ["", "SERVICE", "RULE", "ALERT", "AUTOMATION", "AI_ANALYSIS"];
+const ENTITY_FILTERS = [
+  "",
+  "SERVICE",
+  "RULE",
+  "ALERT",
+  "AUTOMATION",
+  "AI_ANALYSIS",
+  "LOG",
+  "SIMULATOR",
+];
+
+type SimulatorProfile = {
+  profile: string;
+  serviceName: string | null;
+  serviceId: string | null;
+  scenario: string;
+  intervalSeconds: number | null;
+  pendingScenario: string | null;
+};
+
+type SimulatorState = {
+  connected: boolean;
+  lastSeenAt: string | null;
+  profiles: SimulatorProfile[];
+};
+
+const SCENARIO_LABELS: Record<string, string> = {
+  normal: "Normal",
+  "error-spike": "Pico de erros",
+  latency: "Latência alta",
+  silence: "Silêncio",
+};
 
 export default function Page() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -18,12 +49,30 @@ export default function Page() {
   const [entityType, setEntityType] = useState("");
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [simulator, setSimulator] = useState<SimulatorState | null>(null);
 
   useEffect(() => {
     apiFetch<Settings>("/api/settings")
       .then(setSettings)
       .catch(() => setError("Não foi possível contactar o backend."));
   }, []);
+
+  useEffect(() => {
+    const loadSimulator = () =>
+      apiFetch<SimulatorState>("/api/simulator").then(setSimulator).catch(() => {});
+    loadSimulator();
+    // o estado "ligado" muda quando o simulador deixa de reportar — polling curto
+    const interval = setInterval(loadSimulator, 5_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const setScenario = async (profile: string, scenario: string) => {
+    const state = await apiFetch<SimulatorState>(
+      `/api/simulator/scenarios/${encodeURIComponent(profile)}`,
+      { method: "PUT", body: JSON.stringify({ scenario }) }
+    ).catch(() => null);
+    if (state) setSimulator(state);
+  };
 
   const loadAudit = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), size: "25" });
@@ -102,6 +151,107 @@ export default function Page() {
             </a>
             .
           </p>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-800">
+            <h3 className="text-sm font-semibold">Retenção de logs</h3>
+            {settings && <StatusBadge ok={settings.retention.enabled} />}
+          </div>
+          <dl className="space-y-2 p-5 text-sm">
+            <Row
+              label="Logs mantidos por"
+              value={
+                settings
+                  ? settings.retention.enabled
+                    ? `${settings.retention.logDays} dia(s)`
+                    : "sem limite (limpeza desativada)"
+                  : "—"
+              }
+            />
+          </dl>
+          <p className="mx-5 mb-5 text-xs text-gray-500">
+            Limpeza automática de hora a hora. Logs associados a alertas nunca
+            são apagados (ficam como evidência). Configurável via{" "}
+            <code className="font-mono">LOG_RETENTION_DAYS</code> (0 desativa).
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-800">
+            <h3 className="text-sm font-semibold">Email (SMTP)</h3>
+            {settings && <StatusBadge ok={settings.email.configured} />}
+          </div>
+          <dl className="space-y-2 p-5 text-sm">
+            <Row label="Servidor" value={settings?.email.host ?? "(não definido)"} />
+            <Row label="Remetente" value={settings?.email.from ?? "—"} />
+          </dl>
+          <p className="mx-5 mb-5 text-xs text-gray-500">
+            Usado pelas automações do tipo Email. Configura{" "}
+            <code className="font-mono">SMTP_HOST</code>,{" "}
+            <code className="font-mono">SMTP_USERNAME</code>,{" "}
+            <code className="font-mono">SMTP_PASSWORD</code> e{" "}
+            <code className="font-mono">SMTP_FROM</code> no backend.
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-800">
+            <h3 className="text-sm font-semibold">Simulador</h3>
+            {simulator && (
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  simulator.connected
+                    ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
+                    : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                }`}
+              >
+                {simulator.connected ? "● Ligado" : "○ Desligado"}
+              </span>
+            )}
+          </div>
+          {!simulator?.connected ? (
+            <p className="p-5 text-xs text-gray-500">
+              O simulador não está a reportar. Arranca-o com{" "}
+              <code className="font-mono">cd simulator && node index.js</code> —
+              os cenários passam a poder ser mudados aqui em tempo real.
+            </p>
+          ) : (
+            <ul className="divide-y divide-gray-200 dark:divide-gray-800">
+              {simulator.profiles.map((p) => (
+                <li
+                  key={p.profile}
+                  className="flex items-center justify-between gap-3 px-5 py-3 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">
+                      {p.serviceName ?? p.profile}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {p.profile}
+                      {p.intervalSeconds != null && ` · ~${p.intervalSeconds}s`}
+                      {p.pendingScenario && (
+                        <span className="ml-1 text-amber-600 dark:text-amber-400">
+                          · a aplicar…
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <select
+                    value={p.pendingScenario ?? p.scenario}
+                    onChange={(e) => setScenario(p.profile, e.target.value)}
+                    className="shrink-0 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
+                  >
+                    {Object.entries(SCENARIO_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 

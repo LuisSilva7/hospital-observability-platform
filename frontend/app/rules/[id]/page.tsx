@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { use, useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/useLiveRefresh";
 import {
   Evaluation,
   OPERATOR_LABELS,
@@ -36,9 +37,8 @@ export default function RuleDetailPage({
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 10_000);
-    return () => clearInterval(interval);
   }, [load]);
+  useLiveRefresh(["rules", "alerts"], load);
 
   if (error) {
     return (

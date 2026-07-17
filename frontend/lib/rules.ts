@@ -1,4 +1,8 @@
-export type RuleType = "EVENT_MATCH" | "NO_ACTIVITY" | "COUNT_THRESHOLD";
+export type RuleType =
+  | "EVENT_MATCH"
+  | "NO_ACTIVITY"
+  | "COUNT_THRESHOLD"
+  | "ANOMALY";
 export type Severity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type Operator =
   | "EQUALS"
@@ -54,6 +58,11 @@ export const RULE_TYPE_INFO: Record<
     label: "Contagem acima do limite",
     description:
       "Dispara quando chegam N ou mais logs correspondentes numa janela de tempo.",
+  },
+  ANOMALY: {
+    label: "Anomalia estatística (z-score)",
+    description:
+      "Dispara quando a contagem de erros na janela excede o histórico recente em Z desvios-padrão — sem limites fixos.",
   },
 };
 

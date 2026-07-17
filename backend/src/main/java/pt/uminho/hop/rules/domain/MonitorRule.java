@@ -11,7 +11,7 @@ import java.util.UUID;
 @Table(name = "monitor_rule")
 public class MonitorRule {
 
-    public enum Type { EVENT_MATCH, NO_ACTIVITY, COUNT_THRESHOLD }
+    public enum Type { EVENT_MATCH, NO_ACTIVITY, COUNT_THRESHOLD, ANOMALY }
 
     public enum Severity { LOW, MEDIUM, HIGH, CRITICAL }
 

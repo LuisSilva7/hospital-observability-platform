@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/useLiveRefresh";
 import {
   CRITICALITY_LABELS,
   ENVIRONMENT_LABELS,
@@ -24,9 +25,8 @@ export default function ServicesPage() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 10_000);
-    return () => clearInterval(interval);
   }, [load]);
+  useLiveRefresh(["services", "logs"], load);
 
   return (
     <div>

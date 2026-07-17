@@ -17,8 +17,12 @@ public class AIAnalysis {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "alert_id", nullable = false)
+    /** Nulo nas análises ao nível do serviço (insights, extensão E8). */
+    @Column(name = "alert_id")
     private UUID alertId;
+
+    @Column(name = "service_id")
+    private UUID serviceId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -49,6 +53,8 @@ public class AIAnalysis {
     public UUID getId() { return id; }
     public UUID getAlertId() { return alertId; }
     public void setAlertId(UUID alertId) { this.alertId = alertId; }
+    public UUID getServiceId() { return serviceId; }
+    public void setServiceId(UUID serviceId) { this.serviceId = serviceId; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
     public String getProvider() { return provider; }

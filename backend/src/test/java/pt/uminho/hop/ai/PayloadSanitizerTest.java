@@ -10,7 +10,7 @@ class PayloadSanitizerTest {
 
     private AIAnalyzer analyzer(String redactedFields) {
         return new AIAnalyzer(null, null, null, null, null, null, null,
-                new ObjectMapper(), null, redactedFields);
+                new ObjectMapper(), null, null, redactedFields);
     }
 
     @Test

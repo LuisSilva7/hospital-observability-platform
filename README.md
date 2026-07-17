@@ -38,6 +38,17 @@ npm run dev
 
 Abrir http://localhost:3000 — o dashboard mostra o estado da plataforma e da base de dados.
 
+### Alternativa: tudo em Docker (um comando)
+
+```bash
+docker compose --profile full up -d --build
+```
+
+Arranca PostgreSQL, n8n, backend e frontend em containers. Notas:
+- O primeiro build demora alguns minutos (Maven + Next.js).
+- Com o backend em Docker, os webhooks das automações devem usar `http://n8n:5678/...` (o backend fala com o n8n pela rede interna do compose, não por `localhost`).
+- Para voltar ao modo dev: `docker compose --profile full down` e arrancar backend/frontend localmente como acima.
+
 | URL | O quê |
 |---|---|
 | http://localhost:3000 | Interface web |
@@ -67,5 +78,20 @@ cd backend && ./mvnw test   # requer o PostgreSQL do docker compose a correr
 - ✅ Módulo 7 — Automações: webhooks (n8n) executados na criação de alertas, com retries e histórico de execuções
 - ✅ Módulo 8 — Insights de IA: "Analisar com IA" no detalhe do alerta (resumo, causa provável, evidências, recomendações) via API da Anthropic; requer `LLM_API_KEY`
 - ✅ Módulo 9 — Configuração e auditoria: página com estado das integrações (LLM/n8n, sem expor segredos) e histórico de quem/que processo criou ou alterou serviços, regras, alertas e automações
+
+### Extensões pós-MVP
+
+- ✅ Análise IA automática ao criar alerta (ação de automação `AI_ANALYSIS`)
+- ✅ Métricas de avaliação (`/api/metrics`, deteção/notificação/MTTA/MTTR) no dashboard
+- ✅ Atualização em tempo real via SSE (substituiu o polling)
+- ✅ Retenção de logs configurável, preservando evidência de alertas
+- ✅ Docker completo (`docker compose --profile full up -d --build`)
+- ✅ Rate limiting na ingestão e paginação por keyset em `/api/logs`
+- ✅ Criação de regras por linguagem natural (assistida por IA, revisão humana obrigatória)
+- ✅ Insights de IA por serviço, sem depender de um alerta
+- ✅ Deteção estatística (z-score da taxa de erros) como novo tipo de regra
+- ✅ Gráficos no dashboard (volume por hora, top erros, por serviço)
+- ✅ Controlo do simulador pela UI (mudança de cenário em tempo real)
+- ✅ Notificações multi-canal (webhook, email, Microsoft Teams, além do n8n)
 
 Roadmap completo em [CLAUDE.md](CLAUDE.md) e em `docs/documento-visao.txt`.

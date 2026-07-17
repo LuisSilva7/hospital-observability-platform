@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { Alert, AlertStatus, STATUS_LABELS, statusColor } from "@/lib/alerts";
 import { SEVERITY_LABELS, severityColor } from "@/lib/rules";
+import { useLiveRefresh } from "@/lib/useLiveRefresh";
 
 const FILTERS: (AlertStatus | "")[] = ["", "OPEN", "ACKNOWLEDGED", "RESOLVED"];
 
@@ -25,9 +26,8 @@ export default function AlertsPage() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 5_000);
-    return () => clearInterval(interval);
   }, [load]);
+  useLiveRefresh(["alerts"], load);
 
   return (
     <div>

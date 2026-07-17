@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useState } from "react";
+import AiAnalysisPanel from "@/components/AiAnalysisPanel";
 import ApiKeyReveal from "@/components/ApiKeyReveal";
 import ServiceForm, { toRequestBody } from "@/components/ServiceForm";
 import { apiFetch } from "@/lib/api";
@@ -252,6 +253,11 @@ export default function ServiceDetailPage({
           Eliminar
         </button>
       </div>
+
+      <AiAnalysisPanel
+        endpoint={`/api/services/${id}/analyses`}
+        emptyHint="Ainda sem análises. Usa o botão para a IA resumir o estado operacional recente deste serviço a partir dos últimos logs — sem precisar de um alerta."
+      />
     </div>
   );
 }

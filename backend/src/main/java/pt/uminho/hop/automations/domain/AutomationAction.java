@@ -10,7 +10,7 @@ import java.util.UUID;
 @Table(name = "automation_action")
 public class AutomationAction {
 
-    public enum Type { WEBHOOK }
+    public enum Type { WEBHOOK, AI_ANALYSIS, EMAIL, TEAMS }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

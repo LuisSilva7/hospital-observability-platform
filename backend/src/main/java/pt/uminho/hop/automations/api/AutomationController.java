@@ -35,19 +35,22 @@ public class AutomationController {
     private final AutomationExecutor executor;
     private final ObjectMapper mapper;
     private final pt.uminho.hop.audit.AuditTrail audit;
+    private final pt.uminho.hop.alerts.repository.AlertRepository alerts;
 
     public AutomationController(AutomationRepository automations,
                                 MonitorRuleRepository rules,
                                 ActionExecutionRepository executions,
                                 AutomationExecutor executor,
                                 ObjectMapper mapper,
-                                pt.uminho.hop.audit.AuditTrail audit) {
+                                pt.uminho.hop.audit.AuditTrail audit,
+                                pt.uminho.hop.alerts.repository.AlertRepository alerts) {
         this.automations = automations;
         this.rules = rules;
         this.executions = executions;
         this.executor = executor;
         this.mapper = mapper;
         this.audit = audit;
+        this.alerts = alerts;
     }
 
     public record WebhookConfig(
@@ -56,14 +59,29 @@ public class AutomationController {
             Map<String, String> headers,
             String payloadTemplate) {}
 
+    public record EmailConfig(
+            @NotBlank String to,           // destinatários, separados por vírgula
+            String subjectTemplate) {}
+
+    public record TeamsConfig(@NotBlank String url) {}
+
     public record AutomationRequest(
             @NotNull UUID ruleId,
             @NotBlank @Size(max = 160) String name,
-            @NotNull @Valid WebhookConfig webhook) {}
+            AutomationAction.Type type,      // omisso = WEBHOOK
+            @Valid WebhookConfig webhook,    // obrigatório para WEBHOOK
+            @Valid EmailConfig email,        // obrigatório para EMAIL
+            @Valid TeamsConfig teams) {      // obrigatório para TEAMS
+
+        AutomationAction.Type resolvedType() {
+            return type == null ? AutomationAction.Type.WEBHOOK : type;
+        }
+    }
 
     public record AutomationResponse(
             UUID id, UUID ruleId, String ruleName, String name, boolean enabled,
-            OffsetDateTime createdAt, WebhookConfig webhook, UUID actionId) {}
+            OffsetDateTime createdAt, AutomationAction.Type type,
+            WebhookConfig webhook, EmailConfig email, TeamsConfig teams, UUID actionId) {}
 
     public record ExecutionResponse(
             UUID id, UUID actionId, UUID alertId, ActionExecution.Status status,
@@ -132,19 +150,28 @@ public class AutomationController {
         audit.user("AUTOMATION_DELETED", "AUTOMATION", id, Map.of("name", name));
     }
 
-    /** Executa o webhook com um alerta fictício, de forma síncrona, e devolve o resultado. */
+    /** Executa a ação de forma síncrona e devolve o resultado. Webhooks usam um alerta
+     *  fictício; análises IA usam o alerta não-resolvido mais recente da regra (se existir). */
     @PostMapping("/{id}/test")
     public ExecutionResponse test(@PathVariable UUID id) {
         Automation automation = find(id);
         MonitorRule rule = rules.findById(automation.getRuleId()).orElseThrow();
+        AutomationAction action = automation.getActions().get(0);
 
-        Alert fake = new Alert();
-        fake.setServiceId(rule.getServiceId());
-        fake.setRuleId(rule.getId());
-        fake.setTitle("[TESTE] " + automation.getName());
-        fake.setSeverity(rule.getSeverity());
+        Alert target = null;
+        if (action.getType() == AutomationAction.Type.AI_ANALYSIS) {
+            target = alerts.findFirstByRuleIdAndStatusNotOrderByOpenedAtDesc(
+                    rule.getId(), Alert.Status.RESOLVED).orElse(null);
+        }
+        if (target == null) {
+            target = new Alert();
+            target.setServiceId(rule.getServiceId());
+            target.setRuleId(rule.getId());
+            target.setTitle("[TESTE] " + automation.getName());
+            target.setSeverity(rule.getSeverity());
+        }
 
-        ActionExecution result = executor.execute(automation.getActions().get(0), fake);
+        ActionExecution result = executor.execute(action, target);
         audit.user("AUTOMATION_TESTED", "AUTOMATION", id,
                 Map.of("name", automation.getName(), "status", result.getStatus().name()));
         return toExecutionResponse(result);
@@ -164,20 +191,44 @@ public class AutomationController {
         automation.setName(request.name().trim());
         automation.getActions().clear();
 
+        AutomationAction.Type type = request.resolvedType();
         ObjectNode config = mapper.createObjectNode();
-        config.put("url", request.webhook().url().trim());
-        config.put("method", request.webhook().method() == null ? "POST" : request.webhook().method());
-        if (request.webhook().headers() != null && !request.webhook().headers().isEmpty()) {
-            ObjectNode headers = config.putObject("headers");
-            request.webhook().headers().forEach(headers::put);
-        }
-        if (request.webhook().payloadTemplate() != null && !request.webhook().payloadTemplate().isBlank()) {
-            config.put("payloadTemplate", request.webhook().payloadTemplate());
+        switch (type) {
+            case WEBHOOK -> {
+                if (request.webhook() == null) {
+                    throw badRequest("Automações WEBHOOK precisam da configuração do webhook");
+                }
+                config.put("url", request.webhook().url().trim());
+                config.put("method", request.webhook().method() == null ? "POST" : request.webhook().method());
+                if (request.webhook().headers() != null && !request.webhook().headers().isEmpty()) {
+                    ObjectNode headers = config.putObject("headers");
+                    request.webhook().headers().forEach(headers::put);
+                }
+                if (request.webhook().payloadTemplate() != null && !request.webhook().payloadTemplate().isBlank()) {
+                    config.put("payloadTemplate", request.webhook().payloadTemplate());
+                }
+            }
+            case EMAIL -> {
+                if (request.email() == null) {
+                    throw badRequest("Automações EMAIL precisam dos destinatários");
+                }
+                config.put("to", request.email().to().trim());
+                if (request.email().subjectTemplate() != null && !request.email().subjectTemplate().isBlank()) {
+                    config.put("subjectTemplate", request.email().subjectTemplate());
+                }
+            }
+            case TEAMS -> {
+                if (request.teams() == null) {
+                    throw badRequest("Automações TEAMS precisam do URL do incoming webhook");
+                }
+                config.put("url", request.teams().url().trim());
+            }
+            case AI_ANALYSIS -> { /* sem configuração */ }
         }
 
         AutomationAction action = new AutomationAction();
         action.setAutomation(automation);
-        action.setType(AutomationAction.Type.WEBHOOK);
+        action.setType(type);
         action.setConfig(config.toString());
         automation.getActions().add(action);
     }
@@ -187,27 +238,44 @@ public class AutomationController {
                 .orElseThrow(() -> new NotFoundException("Automação não encontrada"));
     }
 
+    private org.springframework.web.server.ResponseStatusException badRequest(String message) {
+        return new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+    }
+
     private AutomationResponse toResponse(Automation a) {
         String ruleName = rules.findById(a.getRuleId()).map(MonitorRule::getName).orElse("(removida)");
+        AutomationAction.Type type = AutomationAction.Type.WEBHOOK;
         WebhookConfig webhook = null;
+        EmailConfig email = null;
+        TeamsConfig teams = null;
         UUID actionId = null;
         if (!a.getActions().isEmpty()) {
             AutomationAction action = a.getActions().get(0);
             actionId = action.getId();
+            type = action.getType();
             try {
                 var config = mapper.readTree(action.getConfig());
-                Map<String, String> headers = new java.util.LinkedHashMap<>();
-                config.path("headers").properties().forEach(e -> headers.put(e.getKey(), e.getValue().asText()));
-                webhook = new WebhookConfig(
-                        config.path("url").asText(),
-                        config.path("method").asText("POST"),
-                        headers,
-                        config.path("payloadTemplate").asText(null));
+                switch (type) {
+                    case WEBHOOK -> {
+                        Map<String, String> headers = new java.util.LinkedHashMap<>();
+                        config.path("headers").properties().forEach(e -> headers.put(e.getKey(), e.getValue().asText()));
+                        webhook = new WebhookConfig(
+                                config.path("url").asText(),
+                                config.path("method").asText("POST"),
+                                headers,
+                                config.path("payloadTemplate").asText(null));
+                    }
+                    case EMAIL -> email = new EmailConfig(
+                            config.path("to").asText(),
+                            config.path("subjectTemplate").asText(null));
+                    case TEAMS -> teams = new TeamsConfig(config.path("url").asText());
+                    case AI_ANALYSIS -> { }
+                }
             } catch (Exception ignored) {
             }
         }
         return new AutomationResponse(a.getId(), a.getRuleId(), ruleName, a.getName(),
-                a.isEnabled(), a.getCreatedAt(), webhook, actionId);
+                a.isEnabled(), a.getCreatedAt(), type, webhook, email, teams, actionId);
     }
 
     private ExecutionResponse toExecutionResponse(ActionExecution e) {

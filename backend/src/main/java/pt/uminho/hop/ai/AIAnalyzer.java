@@ -59,6 +59,18 @@ public class AIAnalyzer {
             - Não afirmes que alguma ação já foi executada; as recomendações são sugestões para o operador humano.
             - Responde em português europeu.""";
 
+    private static final String SERVICE_SYSTEM_PROMPT = """
+            És um assistente de observabilidade de uma plataforma de monitorização hospitalar. \
+            Os dados são técnicos e operacionais (logs de integração entre serviços) — não há dados clínicos. \
+            Analisa o estado operacional recente do serviço com base nos últimos logs fornecidos e produz \
+            um resumo, a causa provável de eventuais anomalias, evidências e recomendações.
+            Regras:
+            - Baseia-te APENAS nos metadados e logs fornecidos neste pedido; se a informação for insuficiente, di-lo explicitamente.
+            - Nas evidências, cita logs concretos de entre os fornecidos (timestamp e mensagem); nunca inventes logs.
+            - Se não houver anomalias, di-lo no resumo e usa as recomendações para sugerir melhorias de monitorização.
+            - Não afirmes que alguma ação já foi executada; as recomendações são sugestões para o operador humano.
+            - Responde em português europeu.""";
+
     private final AlertRepository alerts;
     private final MonitorRuleRepository rules;
     private final MonitoredServiceRepository services;
@@ -68,6 +80,7 @@ public class AIAnalyzer {
     private final LlmProvider llm;
     private final ObjectMapper mapper;
     private final pt.uminho.hop.audit.AuditTrail audit;
+    private final pt.uminho.hop.events.SseHub sse;
     private final Set<String> redactedFields;
 
     public AIAnalyzer(AlertRepository alerts,
@@ -79,6 +92,7 @@ public class AIAnalyzer {
                       LlmProvider llm,
                       ObjectMapper mapper,
                       pt.uminho.hop.audit.AuditTrail audit,
+                      pt.uminho.hop.events.SseHub sse,
                       @Value("${hop.llm.redacted-fields:}") String redactedFieldsCsv) {
         this.alerts = alerts;
         this.rules = rules;
@@ -89,6 +103,7 @@ public class AIAnalyzer {
         this.llm = llm;
         this.mapper = mapper;
         this.audit = audit;
+        this.sse = sse;
         this.redactedFields = Arrays.stream(redactedFieldsCsv.split(","))
                 .map(s -> s.trim().toLowerCase(Locale.ROOT))
                 .filter(s -> !s.isBlank())
@@ -100,38 +115,115 @@ public class AIAnalyzer {
         return analyses.findByAlertIdOrderByCreatedAtDesc(alertId);
     }
 
+    /** Análise pedida pelo operador (botão na UI). Devolve 503 se o LLM não estiver configurado. */
     public AIAnalysis analyze(UUID alertId) {
-        Alert alert = requireAlert(alertId);
+        requireAlert(alertId);
         if (!llm.isConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
                     "Análise por IA não configurada: define a variável de ambiente LLM_API_KEY e reinicia o backend.");
         }
+        return doAnalyze(alertId, true);
+    }
 
+    /** Análise automática disparada por uma ação de automação AI_ANALYSIS (ator SYSTEM). */
+    public AIAnalysis analyzeAutomatically(UUID alertId) {
+        if (!llm.isConfigured()) {
+            throw new LlmException(
+                    "Análise por IA não configurada: define a variável de ambiente LLM_API_KEY no backend.");
+        }
+        return doAnalyze(alertId, false);
+    }
+
+    private AIAnalysis doAnalyze(UUID alertId, boolean byUser) {
+        Alert alert = requireAlert(alertId);
         List<LogEvent> logs = linkedLogs(alertId);
-        String prompt = buildPrompt(alert, logs);
 
-        AIAnalysis analysis = new AIAnalysis();
+        AIAnalysis analysis = newAnalysis(logs);
         analysis.setAlertId(alertId);
+        analysis.setServiceId(alert.getServiceId());
+        return complete(analysis, SYSTEM_PROMPT, buildPrompt(alert, logs), byUser,
+                "alertId", alertId.toString());
+    }
+
+    /** Insights ao nível do serviço (extensão E8): análise dos últimos logs, sem alerta. */
+    public AIAnalysis analyzeService(UUID serviceId) {
+        MonitoredService service = services.findById(serviceId)
+                .orElseThrow(() -> new NotFoundException("Serviço não encontrado"));
+        if (!llm.isConfigured()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Análise por IA não configurada: define a variável de ambiente LLM_API_KEY e reinicia o backend.");
+        }
+        List<LogEvent> logs = logEvents.findTop20ByServiceIdOrderByReceivedAtDesc(serviceId);
+
+        AIAnalysis analysis = newAnalysis(logs);
+        analysis.setServiceId(serviceId);
+        return complete(analysis, SERVICE_SYSTEM_PROMPT, buildServicePrompt(service, logs), true,
+                "serviceId", serviceId.toString());
+    }
+
+    public List<AIAnalysis> listForService(UUID serviceId) {
+        if (!services.existsById(serviceId)) {
+            throw new NotFoundException("Serviço não encontrado");
+        }
+        return analyses.findByServiceIdAndAlertIdNullOrderByCreatedAtDesc(serviceId);
+    }
+
+    private AIAnalysis newAnalysis(List<LogEvent> logs) {
+        AIAnalysis analysis = new AIAnalysis();
         analysis.setProvider(llm.name());
         analysis.setModel(llm.model());
         analysis.setPromptVersion(PROMPT_VERSION);
         analysis.setInputLogIds(writeJson(logs.stream().map(LogEvent::getId).toList()));
+        return analysis;
+    }
 
+    /** Invoca o LLM, persiste o resultado (SUCCESS/FAILED), audita e emite SSE. */
+    private AIAnalysis complete(AIAnalysis analysis, String systemPrompt, String prompt,
+                                boolean byUser, String subjectKey, String subjectValue) {
         try {
-            AnalysisResult result = llm.analyze(SYSTEM_PROMPT, prompt);
+            AnalysisResult result = llm.generate(systemPrompt, prompt, AnalysisResult.class);
             analysis.setStatus(AIAnalysis.Status.SUCCESS);
             analysis.setOutput(writeJson(result));
         } catch (LlmException e) {
-            log.warn("Análise de IA falhou para o alerta {}: {}", alertId, e.getMessage());
+            log.warn("Análise de IA falhou ({}={}): {}", subjectKey, subjectValue, e.getMessage());
             analysis.setStatus(AIAnalysis.Status.FAILED);
             analysis.setError(e.getMessage());
         }
         AIAnalysis saved = analyses.save(analysis);
-        audit.user("AI_ANALYSIS_REQUESTED", "AI_ANALYSIS", saved.getId(), java.util.Map.of(
-                "alertId", alertId.toString(),
+        java.util.Map<String, String> details = java.util.Map.of(
+                subjectKey, subjectValue,
                 "status", saved.getStatus().name(),
-                "model", llm.model()));
+                "model", llm.model());
+        if (byUser) {
+            audit.user("AI_ANALYSIS_REQUESTED", "AI_ANALYSIS", saved.getId(), details);
+        } else {
+            audit.system("AI_ANALYSIS_REQUESTED", "AI_ANALYSIS", saved.getId(), details);
+        }
+        sse.publish("analyses");
         return saved;
+    }
+
+    private String buildServicePrompt(MonitoredService service, List<LogEvent> logs) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("## Serviço\n")
+                .append("Nome: ").append(service.getName()).append('\n')
+                .append("Ambiente: ").append(service.getEnvironment()).append('\n')
+                .append("Criticidade: ").append(service.getCriticality()).append('\n')
+                .append("Ativo: ").append(service.isActive() ? "sim" : "não").append('\n')
+                .append("Último log recebido: ")
+                .append(service.getLastSeenAt() == null ? "(nunca)" : service.getLastSeenAt()).append('\n');
+
+        sb.append("\n## Últimos logs (").append(logs.size()).append(", mais recentes primeiro)\n");
+        if (logs.isEmpty()) {
+            sb.append("(o serviço ainda não enviou logs)\n");
+        }
+        for (LogEvent event : logs) {
+            sb.append("- [").append(event.getReceivedAt()).append("] ")
+                    .append(event.getLevel() == null ? "?" : event.getLevel()).append(' ')
+                    .append(event.getMessage() == null ? "(sem mensagem)" : event.getMessage()).append('\n')
+                    .append("  payload: ").append(sanitizePayload(event.getPayload())).append('\n');
+        }
+        return sb.toString();
     }
 
     private Alert requireAlert(UUID alertId) {

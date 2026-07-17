@@ -23,15 +23,21 @@ public class IngestService {
     private final ServiceApiKeyRepository apiKeys;
     private final LogEventRepository logEvents;
     private final pt.uminho.hop.rules.RuleEngine ruleEngine;
+    private final pt.uminho.hop.events.SseHub sse;
+    private final IngestRateLimiter rateLimiter;
 
     public IngestService(MonitoredServiceRepository services,
                          ServiceApiKeyRepository apiKeys,
                          LogEventRepository logEvents,
-                         pt.uminho.hop.rules.RuleEngine ruleEngine) {
+                         pt.uminho.hop.rules.RuleEngine ruleEngine,
+                         pt.uminho.hop.events.SseHub sse,
+                         IngestRateLimiter rateLimiter) {
         this.services = services;
         this.apiKeys = apiKeys;
         this.logEvents = logEvents;
         this.ruleEngine = ruleEngine;
+        this.sse = sse;
+        this.rateLimiter = rateLimiter;
     }
 
     @Transactional
@@ -48,6 +54,13 @@ public class IngestService {
 
         if (!service.isActive()) {
             throw new UnauthorizedException("Serviço está desativado");
+        }
+
+        long waitSeconds = rateLimiter.tryAcquire(serviceId);
+        if (waitSeconds > 0) {
+            throw new pt.uminho.hop.common.TooManyRequestsException(
+                    "Limite de ingestão excedido para este serviço — tenta novamente em "
+                            + waitSeconds + "s", waitSeconds);
         }
 
         var fields = LogNormalizer.normalize(payload);
@@ -68,6 +81,7 @@ public class IngestService {
 
         ruleEngine.evaluateOnIngest(serviceId, event.getId(), payload);
 
+        sse.publish("logs");
         return event;
     }
 }

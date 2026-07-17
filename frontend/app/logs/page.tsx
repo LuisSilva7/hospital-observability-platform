@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { Service } from "@/lib/types";
+import { useLiveRefresh } from "@/lib/useLiveRefresh";
 
 type LogEvent = {
   id: string;
@@ -18,10 +19,11 @@ type LogEvent = {
 
 type LogPage = {
   content: LogEvent[];
-  page: number;
   size: number;
-  totalElements: number;
-  totalPages: number;
+  // presentes só na 1.ª página (modo com contagem); páginas seguintes usam cursor keyset
+  totalElements?: number;
+  totalPages?: number;
+  nextCursor: string | null;
 };
 
 const LEVELS = ["", "INFO", "WARN", "ERROR", "DEBUG", "TRACE", "FATAL"];
@@ -52,7 +54,8 @@ export default function LogsPage() {
     from: "",
     to: "",
   });
-  const [page, setPage] = useState(0);
+  // pilha de cursores keyset: vazia = 1.ª página; cada "Seguinte" empilha um cursor
+  const [cursorStack, setCursorStack] = useState<string[]>([]);
   const [data, setData] = useState<LogPage | null>(null);
   const [selected, setSelected] = useState<LogEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +71,8 @@ export default function LogsPage() {
     if (filters.text) params.set("text", filters.text);
     if (filters.from) params.set("from", new Date(filters.from).toISOString());
     if (filters.to) params.set("to", new Date(filters.to).toISOString());
-    params.set("page", String(page));
+    const cursor = cursorStack[cursorStack.length - 1];
+    if (cursor) params.set("cursor", cursor);
     params.set("size", "25");
     apiFetch<LogPage>(`/api/logs?${params}`)
       .then((d) => {
@@ -76,17 +80,16 @@ export default function LogsPage() {
         setError(null);
       })
       .catch(() => setError("Não foi possível carregar os logs."));
-  }, [filters, page]);
+  }, [filters, cursorStack]);
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 5_000);
-    return () => clearInterval(interval);
   }, [load]);
+  useLiveRefresh(["logs"], load);
 
   const setFilter = (field: string, value: string) => {
     setFilters((f) => ({ ...f, [field]: value }));
-    setPage(0);
+    setCursorStack([]);
   };
 
   return (
@@ -201,20 +204,24 @@ export default function LogsPage() {
 
           <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
             <span>
-              {data.totalElements} logs · página {data.page + 1} de{" "}
-              {Math.max(data.totalPages, 1)}
+              {cursorStack.length === 0 && data.totalElements != null
+                ? `${data.totalElements} logs · página 1`
+                : `página ${cursorStack.length + 1}`}
             </span>
             <div className="flex gap-2">
               <button
-                disabled={page === 0}
-                onClick={() => setPage((p) => p - 1)}
+                disabled={cursorStack.length === 0}
+                onClick={() => setCursorStack((s) => s.slice(0, -1))}
                 className="rounded-md border border-gray-300 px-3 py-1.5 disabled:opacity-40 dark:border-gray-700"
               >
                 ← Anterior
               </button>
               <button
-                disabled={page + 1 >= data.totalPages}
-                onClick={() => setPage((p) => p + 1)}
+                disabled={!data.nextCursor}
+                onClick={() =>
+                  data.nextCursor &&
+                  setCursorStack((s) => [...s, data.nextCursor as string])
+                }
                 className="rounded-md border border-gray-300 px-3 py-1.5 disabled:opacity-40 dark:border-gray-700"
               >
                 Seguinte →

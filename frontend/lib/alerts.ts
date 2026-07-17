@@ -30,9 +30,23 @@ export type LinkedLog = {
   payload: string;
 };
 
+export type ActionType = "WEBHOOK" | "AI_ANALYSIS" | "EMAIL" | "TEAMS";
+
+// rótulos por tipo de ação executada (sucesso / falha) na timeline do alerta
+export const EXECUTION_LABELS: Record<
+  ActionType,
+  { ok: string; fail: string }
+> = {
+  WEBHOOK: { ok: "✅ Webhook enviado", fail: "❌ Webhook falhou" },
+  AI_ANALYSIS: { ok: "✨ Análise IA gerada", fail: "❌ Análise IA falhou" },
+  EMAIL: { ok: "✉️ Email enviado", fail: "❌ Email falhou" },
+  TEAMS: { ok: "💬 Cartão no Teams enviado", fail: "❌ Teams falhou" },
+};
+
 export type ExecutionSummary = {
   id: string;
   status: "SUCCESS" | "FAILED";
+  actionType: ActionType;
   attempts: number;
   responseCode: number | null;
   error: string | null;
@@ -55,7 +69,8 @@ export type AnalysisOutput = {
 
 export type AIAnalysis = {
   id: string;
-  alertId: string;
+  alertId?: string | null;
+  serviceId?: string | null;
   status: "SUCCESS" | "FAILED";
   provider: string;
   model: string | null;

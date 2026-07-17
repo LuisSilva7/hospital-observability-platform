@@ -28,6 +28,44 @@ services:
     volumes:
       - n8n-data:/home/node/.n8n
 
+  # --- perfil "full": plataforma inteira em containers ---
+  # docker compose --profile full up -d --build
+  backend:
+    build: ./backend
+    container_name: hop-backend
+    profiles: ["full"]
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-hop}
+      POSTGRES_USER: ${POSTGRES_USER:-hop}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hop}
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-claude-sonnet-5}
+      LLM_REDACTED_FIELDS: ${LLM_REDACTED_FIELDS:-}
+      # dentro da rede do compose o n8n é "n8n", não "localhost"
+      N8N_WEBHOOK_BASE_URL: http://n8n:5678
+      LOG_RETENTION_DAYS: ${LOG_RETENTION_DAYS:-30}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/8080' || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 18
+
+  frontend:
+    build: ./frontend
+    container_name: hop-frontend
+    profiles: ["full"]
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   postgres-data:
   n8n-data:

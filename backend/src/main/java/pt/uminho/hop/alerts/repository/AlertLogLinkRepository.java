@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface AlertLogLinkRepository extends JpaRepository<AlertLogLink, AlertLogLink.Key> {
     List<AlertLogLink> findByAlertId(UUID alertId);
+    List<AlertLogLink> findByAlertIdIn(List<UUID> alertIds);
 }

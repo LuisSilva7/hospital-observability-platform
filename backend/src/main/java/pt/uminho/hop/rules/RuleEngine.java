@@ -51,7 +51,7 @@ public class RuleEngine {
                 switch (rule.getType()) {
                     case EVENT_MATCH -> evaluateEventMatch(rule, logEventId, payload, now);
                     case COUNT_THRESHOLD -> evaluateCountThreshold(rule, logEventId, payload, now);
-                    case NO_ACTIVITY -> { /* avaliada pelo job agendado */ }
+                    case NO_ACTIVITY, ANOMALY -> { /* avaliadas pelos jobs agendados */ }
                 }
             } catch (Exception e) {
                 // uma regra partida não pode impedir a ingestão nem as outras regras
@@ -132,6 +132,52 @@ public class RuleEngine {
                 }
             } catch (Exception e) {
                 log.error("Erro ao avaliar regra NO_ACTIVITY {} ({})", rule.getName(), rule.getId(), e);
+            }
+        }
+    }
+
+    /** Número de janelas anteriores usadas como histórico do z-score. */
+    static final int ANOMALY_HISTORY_BUCKETS = 12;
+
+    /** Job agendado: regras ANOMALY (z-score da taxa de erros face ao histórico). */
+    @Scheduled(fixedDelayString = "${hop.rules.anomaly-check-seconds:60}000")
+    @Transactional
+    public void checkAnomalies() {
+        checkAnomalies(OffsetDateTime.now());
+    }
+
+    void checkAnomalies(OffsetDateTime now) {
+        for (MonitorRule rule : rules.findByTypeAndEnabledTrue(MonitorRule.Type.ANOMALY)) {
+            try {
+                if (inCooldown(rule, now)) continue;
+                MonitoredService service = services.findById(rule.getServiceId()).orElse(null);
+                if (service == null || !service.isActive()) continue;
+
+                int window = rule.getWindowMinutes() == null ? 15 : rule.getWindowMinutes();
+                double minZ = rule.getThreshold() == null ? 3 : rule.getThreshold();
+                OffsetDateTime historyStart =
+                        now.minusMinutes((long) window * (ANOMALY_HISTORY_BUCKETS + 1));
+
+                // uma só query: timestamps dos erros; janelas calculadas em memória
+                List<OffsetDateTime> errors =
+                        logEvents.findErrorTimestampsSince(rule.getServiceId(), historyStart);
+                long[] buckets = new long[ANOMALY_HISTORY_BUCKETS + 1];
+                for (OffsetDateTime ts : errors) {
+                    long minutesAgo = java.time.Duration.between(ts, now).toMinutes();
+                    int bucket = (int) (minutesAgo / window);
+                    if (bucket >= 0 && bucket < buckets.length) buckets[bucket]++;
+                }
+                long current = buckets[0];
+                List<Long> history = java.util.Arrays.stream(buckets).skip(1).boxed().toList();
+
+                AnomalyDetector.detect(history, current, minZ).ifPresent(result ->
+                        trigger(rule, null,
+                                ("Taxa de erros anómala: %d erros nos últimos %d min "
+                                        + "(média histórica %.1f, desvio %.1f, z=%.1f ≥ %.0f)")
+                                        .formatted(result.current(), window, result.mean(),
+                                                result.stdDev(), result.zScore(), minZ), now));
+            } catch (Exception e) {
+                log.error("Erro ao avaliar regra ANOMALY {} ({})", rule.getName(), rule.getId(), e);
             }
         }
     }

@@ -17,10 +17,13 @@ public class ServiceController {
 
     private final ServiceManager manager;
     private final AuditTrail audit;
+    private final pt.uminho.hop.events.SseHub sse;
 
-    public ServiceController(ServiceManager manager, AuditTrail audit) {
+    public ServiceController(ServiceManager manager, AuditTrail audit,
+                             pt.uminho.hop.events.SseHub sse) {
         this.manager = manager;
         this.audit = audit;
+        this.sse = sse;
     }
 
     @PostMapping
@@ -29,6 +32,7 @@ public class ServiceController {
         ServiceCreatedResponse created = manager.create(request);
         audit.user("SERVICE_CREATED", "SERVICE", created.service().id(),
                 Map.of("name", created.service().name()));
+        sse.publish("services");
         return created;
     }
 
@@ -46,6 +50,7 @@ public class ServiceController {
     public ServiceResponse update(@PathVariable UUID id, @Valid @RequestBody ServiceRequest request) {
         ServiceResponse updated = manager.update(id, request);
         audit.user("SERVICE_UPDATED", "SERVICE", id, Map.of("name", updated.name()));
+        sse.publish("services");
         return updated;
     }
 
@@ -55,6 +60,7 @@ public class ServiceController {
         ServiceResponse updated = manager.setActive(id, active);
         audit.user(active ? "SERVICE_ACTIVATED" : "SERVICE_DEACTIVATED", "SERVICE", id,
                 Map.of("name", updated.name()));
+        sse.publish("services");
         return updated;
     }
 
@@ -64,6 +70,7 @@ public class ServiceController {
         String name = manager.get(id).name();
         manager.delete(id);
         audit.user("SERVICE_DELETED", "SERVICE", id, Map.of("name", name));
+        sse.publish("services");
     }
 
     @PostMapping("/{id}/api-key")

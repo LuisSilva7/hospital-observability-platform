@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, extractApiMessage } from "@/lib/api";
 import { Service } from "@/lib/types";
 import {
   Condition,
@@ -20,6 +20,19 @@ const inputClass =
   "rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900";
 
 const STEPS = ["Serviço", "Tipo de regra", "Condições", "Severidade e nome"];
+
+type Suggestion = {
+  serviceId: string | null;
+  serviceName: string | null;
+  name: string | null;
+  type: RuleType;
+  severity: Severity | null;
+  windowMinutes: number | null;
+  threshold: number | null;
+  cooldownMinutes: number | null;
+  conditions: Condition[] | null;
+  explanation: string;
+};
 
 export default function NewRulePage() {
   const router = useRouter();
@@ -39,6 +52,42 @@ export default function NewRulePage() {
   const [severity, setSeverity] = useState<Severity>("HIGH");
   const [cooldownMinutes, setCooldownMinutes] = useState("10");
 
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const suggestWithAi = async () => {
+    setAiLoading(true);
+    setAiError(null);
+    setAiExplanation(null);
+    try {
+      const s = await apiFetch<Suggestion>("/api/rules/suggest", {
+        method: "POST",
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+      if (s.serviceId) setServiceId(s.serviceId);
+      if (s.type) setType(s.type);
+      if (s.conditions && s.conditions.length > 0) setConditions(s.conditions);
+      if (s.windowMinutes != null) setWindowMinutes(String(s.windowMinutes));
+      if (s.threshold != null) setThreshold(String(s.threshold));
+      if (s.cooldownMinutes != null) setCooldownMinutes(String(s.cooldownMinutes));
+      if (s.severity) setSeverity(s.severity);
+      if (s.name) setName(s.name);
+      setStep(0);
+      setAiExplanation(
+        (s.explanation ?? "Sugestão aplicada.") +
+          (s.serviceId
+            ? " Revê os passos e confirma no fim — nada é gravado sem a tua confirmação."
+            : " Não consegui identificar o serviço — escolhe-o no passo 1.")
+      );
+    } catch (e) {
+      setAiError(extractApiMessage(e) ?? "Falha ao gerar a sugestão com IA.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   useEffect(() => {
     apiFetch<Service[]>("/api/services").then((s) => {
       setServices(s);
@@ -50,6 +99,8 @@ export default function NewRulePage() {
     if (step === 0) return !!serviceId;
     if (step === 2) {
       if (type === "NO_ACTIVITY") return Number(windowMinutes) > 0;
+      if (type === "ANOMALY")
+        return Number(windowMinutes) > 0 && Number(threshold) > 0;
       const condsOk =
         conditions.length > 0 &&
         conditions.every((c) => c.fieldPath.trim() && c.expectedValue.trim());
@@ -80,8 +131,14 @@ export default function NewRulePage() {
           cooldownMinutes: Number(cooldownMinutes),
           windowMinutes:
             type === "EVENT_MATCH" ? null : Number(windowMinutes) || null,
-          threshold: type === "COUNT_THRESHOLD" ? Number(threshold) : null,
-          conditions: type === "NO_ACTIVITY" ? [] : conditions,
+          threshold:
+            type === "COUNT_THRESHOLD" || type === "ANOMALY"
+              ? // o backend guarda o limiar como inteiro; arredondar aqui evita
+                // que um z-score como 2.5 seja truncado silenciosamente para 2
+                Math.round(Number(threshold))
+              : null,
+          conditions:
+            type === "NO_ACTIVITY" || type === "ANOMALY" ? [] : conditions,
         }),
       });
       router.push("/rules");
@@ -94,6 +151,8 @@ export default function NewRulePage() {
   const suggestedName = () => {
     const svc = services.find((s) => s.id === serviceId)?.name ?? "";
     if (type === "NO_ACTIVITY") return `${svc}: sem logs por ${windowMinutes} min`;
+    if (type === "ANOMALY")
+      return `${svc}: erros anómalos (z ≥ ${threshold} em ${windowMinutes} min)`;
     if (type === "COUNT_THRESHOLD")
       return `${svc}: ${threshold}+ eventos em ${windowMinutes} min`;
     const c = conditions[0];
@@ -106,6 +165,45 @@ export default function NewRulePage() {
         ← Regras
       </Link>
       <h2 className="mt-2 text-2xl font-semibold">Nova regra</h2>
+
+      <div className="mt-4 rounded-lg border border-violet-200 bg-violet-50 p-4 dark:border-violet-900 dark:bg-violet-950/40">
+        <label className="text-sm font-semibold">
+          ✨ Descrever em linguagem natural (opcional)
+        </label>
+        <p className="mt-0.5 text-xs text-gray-500">
+          Ex.: &quot;avisa-me se o laboratório enviar mais de 5 erros em 15
+          minutos&quot;. A IA pré-preenche o wizard — tu revês e confirmas.
+        </p>
+        <div className="mt-2 flex gap-2">
+          <input
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && aiPrompt.trim() && !aiLoading) suggestWithAi();
+            }}
+            maxLength={1000}
+            placeholder="Descreve a regra que queres criar…"
+            className={`${inputClass} flex-1`}
+          />
+          <button
+            onClick={suggestWithAi}
+            disabled={aiLoading || !aiPrompt.trim()}
+            className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {aiLoading ? "A pensar…" : "Sugerir"}
+          </button>
+        </div>
+        {aiError && (
+          <p className="mt-2 rounded-md bg-red-50 p-2 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">
+            {aiError}
+          </p>
+        )}
+        {aiExplanation && (
+          <p className="mt-2 rounded-md bg-violet-100 p-2 text-xs text-violet-800 dark:bg-violet-900/60 dark:text-violet-200">
+            {aiExplanation}
+          </p>
+        )}
+      </div>
 
       <ol className="mt-4 flex gap-2 text-xs">
         {STEPS.map((label, i) => (
@@ -167,7 +265,12 @@ export default function NewRulePage() {
                 <input
                   type="radio"
                   checked={type === t}
-                  onChange={() => setType(t)}
+                  onChange={() => {
+                    setType(t);
+                    // pré-preenche o limiar com o valor típico de cada tipo
+                    if (t === "ANOMALY") setThreshold("3");
+                    else if (t === "COUNT_THRESHOLD") setThreshold("5");
+                  }}
                   className="mt-1"
                 />
                 <span>
@@ -185,7 +288,14 @@ export default function NewRulePage() {
 
         {step === 2 && (
           <div className="space-y-4">
-            {type !== "NO_ACTIVITY" && (
+            {type === "ANOMALY" && (
+              <p className="rounded-md bg-violet-50 p-3 text-xs text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+                Conta os logs ERROR/FATAL na janela atual e compara com as 12
+                janelas anteriores: dispara quando a contagem excede a média
+                histórica em Z desvios-padrão (mínimo 3 erros na janela).
+              </p>
+            )}
+            {type !== "NO_ACTIVITY" && type !== "ANOMALY" && (
               <div>
                 <p className="text-sm font-medium">
                   Condições (todas têm de se verificar)
@@ -267,16 +377,25 @@ export default function NewRulePage() {
                     className={`${inputClass} mt-1 w-32`}
                   />
                 </div>
-                {type === "COUNT_THRESHOLD" && (
+                {(type === "COUNT_THRESHOLD" || type === "ANOMALY") && (
                   <div>
-                    <label className="text-sm font-medium">Nº de eventos (≥)</label>
+                    <label className="text-sm font-medium">
+                      {type === "ANOMALY" ? "Z-score mínimo (≥)" : "Nº de eventos (≥)"}
+                    </label>
                     <input
                       type="number"
                       min={1}
+                      step={1}
                       value={threshold}
                       onChange={(e) => setThreshold(e.target.value)}
                       className={`${inputClass} mt-1 w-32`}
                     />
+                    {type === "ANOMALY" && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Número inteiro; 3 é o valor típico (desvios-padrão acima
+                        da média).
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

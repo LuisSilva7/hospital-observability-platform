@@ -34,3 +34,15 @@ Cenários por perfil (`laboratory`, `admissions`, `notifications`):
 | `silence` | o serviço não envia nada |
 
 Parar com Ctrl+C. Vários cenários podem ser combinados no mesmo comando.
+
+## Controlo em tempo real pela UI
+
+Com o simulador a correr, os cenários podem ser mudados sem reiniciar, na
+página **Configuração → Simulador** da plataforma:
+
+- o simulador reporta o seu estado por `POST /api/simulator/status` a cada ~5s
+  e recebe na resposta os cenários pedidos na UI (aplica-os no ciclo seguinte);
+- `silence` passou a ser dinâmico: o loop continua vivo sem enviar logs, e o
+  serviço "volta a falar" quando o cenário mudar de novo;
+- se a plataforma estiver em baixo, o simulador mantém os cenários atuais e
+  continua a tentar sincronizar.

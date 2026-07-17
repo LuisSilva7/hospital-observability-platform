@@ -27,15 +27,21 @@ public class RuleController {
     private final RuleEvaluationRepository evaluations;
     private final MonitoredServiceRepository services;
     private final pt.uminho.hop.audit.AuditTrail audit;
+    private final pt.uminho.hop.events.SseHub sse;
+    private final pt.uminho.hop.rules.RuleSuggester suggester;
 
     public RuleController(MonitorRuleRepository rules,
                           RuleEvaluationRepository evaluations,
                           MonitoredServiceRepository services,
-                          pt.uminho.hop.audit.AuditTrail audit) {
+                          pt.uminho.hop.audit.AuditTrail audit,
+                          pt.uminho.hop.events.SseHub sse,
+                          pt.uminho.hop.rules.RuleSuggester suggester) {
         this.rules = rules;
         this.evaluations = evaluations;
         this.services = services;
         this.audit = audit;
+        this.sse = sse;
+        this.suggester = suggester;
     }
 
     // --- DTOs ---
@@ -76,6 +82,7 @@ public class RuleController {
         RuleResponse response = toResponse(rules.save(rule));
         audit.user("RULE_CREATED", "RULE", response.id(),
                 Map.of("name", response.name(), "type", response.type().name()));
+        sse.publish("rules");
         return response;
     }
 
@@ -102,6 +109,7 @@ public class RuleController {
         RuleResponse response = toResponse(rules.save(rule));
         audit.user("RULE_UPDATED", "RULE", id,
                 Map.of("name", response.name(), "type", response.type().name()));
+        sse.publish("rules");
         return response;
     }
 
@@ -114,6 +122,7 @@ public class RuleController {
         RuleResponse response = toResponse(rules.save(rule));
         audit.user(enabled ? "RULE_ENABLED" : "RULE_DISABLED", "RULE", id,
                 Map.of("name", response.name()));
+        sse.publish("rules");
         return response;
     }
 
@@ -125,6 +134,16 @@ public class RuleController {
         String name = rule.getName();
         rules.delete(rule);
         audit.user("RULE_DELETED", "RULE", id, Map.of("name", name));
+        sse.publish("rules");
+    }
+
+    public record SuggestRequest(@NotBlank @Size(max = 1000) String prompt) {}
+
+    /** Sugestão de regra por linguagem natural (IA). Não grava nada — só pré-preenche o wizard. */
+    @PostMapping("/suggest")
+    public pt.uminho.hop.rules.RuleSuggester.RuleSuggestionResponse suggest(
+            @Valid @RequestBody SuggestRequest request) {
+        return suggester.suggest(request.prompt());
     }
 
     @GetMapping("/{id}/evaluations")
@@ -141,15 +160,17 @@ public class RuleController {
         if (!services.existsById(request.serviceId())) {
             throw new NotFoundException("Serviço não encontrado");
         }
-        boolean needsConditions = request.type() != MonitorRule.Type.NO_ACTIVITY;
+        boolean needsConditions = request.type() != MonitorRule.Type.NO_ACTIVITY
+                && request.type() != MonitorRule.Type.ANOMALY;
         boolean hasConditions = request.conditions() != null && !request.conditions().isEmpty();
         if (needsConditions && !hasConditions) {
             throw new org.springframework.web.server.ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "Regras " + request.type() + " precisam de pelo menos uma condição");
         }
-        if (request.type() == MonitorRule.Type.NO_ACTIVITY && request.windowMinutes() == null) {
+        if ((request.type() == MonitorRule.Type.NO_ACTIVITY || request.type() == MonitorRule.Type.ANOMALY)
+                && request.windowMinutes() == null) {
             throw new org.springframework.web.server.ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Regras NO_ACTIVITY precisam de windowMinutes");
+                    HttpStatus.BAD_REQUEST, "Regras " + request.type() + " precisam de windowMinutes");
         }
         if (request.type() == MonitorRule.Type.COUNT_THRESHOLD
                 && (request.windowMinutes() == null || request.threshold() == null)) {

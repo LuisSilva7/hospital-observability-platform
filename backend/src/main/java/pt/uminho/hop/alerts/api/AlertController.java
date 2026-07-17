@@ -57,7 +57,7 @@ public class AlertController {
     public record LinkedLog(UUID id, OffsetDateTime receivedAt, String level, String message, String payload) {}
 
     public record ExecutionSummary(
-            UUID id, String status, int attempts, Integer responseCode,
+            UUID id, String status, String actionType, int attempts, Integer responseCode,
             String error, OffsetDateTime executedAt) {}
 
     public record AlertDetailResponse(
@@ -89,9 +89,11 @@ public class AlertController {
                 .map(this::toLinkedLog)
                 .toList();
 
+        // o tipo é lido da própria execução (persistido no momento em que correu),
+        // por isso o rótulo mantém-se correto mesmo que a automação seja depois editada
         List<ExecutionSummary> execs = actionExecutions.findByAlertIdOrderByExecutedAtDesc(id).stream()
-                .map(e -> new ExecutionSummary(e.getId(), e.getStatus().name(), e.getAttempts(),
-                        e.getResponseCode(), e.getError(), e.getExecutedAt()))
+                .map(e -> new ExecutionSummary(e.getId(), e.getStatus().name(), e.getActionType().name(),
+                        e.getAttempts(), e.getResponseCode(), e.getError(), e.getExecutedAt()))
                 .toList();
 
         return new AlertDetailResponse(toResponse(alert, serviceNames()), timeline, logs, execs);

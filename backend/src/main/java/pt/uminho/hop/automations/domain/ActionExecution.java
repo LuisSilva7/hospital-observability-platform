@@ -18,6 +18,11 @@ public class ActionExecution {
     @Column(name = "action_id")
     private UUID actionId;
 
+    /** Tipo da ação no momento da execução — preservado mesmo que a ação mude depois. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "action_type", nullable = false, length = 30)
+    private AutomationAction.Type actionType = AutomationAction.Type.WEBHOOK;
+
     @Column(name = "alert_id")
     private UUID alertId;
 
@@ -42,6 +47,8 @@ public class ActionExecution {
     public UUID getId() { return id; }
     public UUID getActionId() { return actionId; }
     public void setActionId(UUID actionId) { this.actionId = actionId; }
+    public AutomationAction.Type getActionType() { return actionType; }
+    public void setActionType(AutomationAction.Type actionType) { this.actionType = actionType; }
     public UUID getAlertId() { return alertId; }
     public void setAlertId(UUID alertId) { this.alertId = alertId; }
     public Status getStatus() { return status; }

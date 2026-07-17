@@ -15,3 +15,18 @@ export async function apiFetch<T>(
   }
   return res.json() as Promise<T>;
 }
+
+/**
+ * Extrai a mensagem do backend de um erro lançado por apiFetch
+ * (formato "API <status>: <corpo JSON>"). Devolve null se não for possível.
+ */
+export function extractApiMessage(e: unknown): string | null {
+  if (!(e instanceof Error)) return null;
+  const idx = e.message.indexOf(": ");
+  if (idx === -1) return null;
+  try {
+    return JSON.parse(e.message.slice(idx + 2)).message ?? null;
+  } catch {
+    return null;
+  }
+}

@@ -7,6 +7,9 @@
 //   node index.js --scenario notifications=silence --scenario laboratory=latency
 //
 // Cenários: normal | error-spike | silence | latency
+//
+// Os cenários também podem ser mudados em tempo real na UI da plataforma
+// (página Configuração → Simulador): o simulador sincroniza a cada 5s.
 
 import { readFileSync } from "node:fs";
 
@@ -117,15 +120,20 @@ async function sendLog(service, scenario) {
   }
 }
 
+// --- estado mutável de cenários (CLI < config.json < alterações da UI) ---
+const VALID_SCENARIOS = new Set(["normal", "error-spike", "latency", "silence"]);
+const scenarios = {};
+for (const service of config.services) {
+  scenarios[service.profile] = overrides[service.profile] ?? service.scenario ?? "normal";
+}
+
 function startService(service) {
-  const scenario = overrides[service.profile] ?? service.scenario ?? "normal";
-  if (scenario === "silence") {
-    console.log(`● ${service.name} — cenário SILENCE: não envia logs.`);
-    return;
-  }
-  console.log(`● ${service.name} — cenário ${scenario}, a cada ~${service.intervalSeconds}s`);
+  console.log(`● ${service.name} — cenário ${scenarios[service.profile]}, a cada ~${service.intervalSeconds}s`);
   const tick = () => {
-    sendLog(service, scenario);
+    const scenario = scenarios[service.profile];
+    if (scenario !== "silence") {
+      sendLog(service, scenario); // silence: continua o loop sem enviar
+    }
     // jitter de ±20% para não parecer um metrónomo
     const next = service.intervalSeconds * 1000 * (0.8 + Math.random() * 0.4);
     setTimeout(tick, next);
@@ -133,5 +141,40 @@ function startService(service) {
   setTimeout(tick, Math.random() * 2000);
 }
 
+// --- sincronização com a plataforma: reporta estado, aplica cenários da UI ---
+async function syncWithPlatform() {
+  try {
+    const res = await fetch(`${config.baseUrl}/api/simulator/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // sem timeout, um backend que aceita a ligação mas nunca responde
+      // deixaria o await pendurado e mataria o loop de sincronização
+      signal: AbortSignal.timeout(4000),
+      body: JSON.stringify({
+        profiles: config.services.map((s) => ({
+          profile: s.profile,
+          serviceName: s.name,
+          serviceId: s.serviceId,
+          scenario: scenarios[s.profile],
+          intervalSeconds: s.intervalSeconds,
+        })),
+      }),
+    });
+    if (res.ok) {
+      const body = await res.json();
+      for (const [profile, scenario] of Object.entries(body.scenarios ?? {})) {
+        if (profile in scenarios && VALID_SCENARIOS.has(scenario) && scenarios[profile] !== scenario) {
+          console.log(`↺ ${profile}: cenário ${scenarios[profile]} → ${scenario} (alterado na plataforma)`);
+          scenarios[profile] = scenario;
+        }
+      }
+    }
+  } catch {
+    // plataforma indisponível — mantém os cenários atuais
+  }
+  setTimeout(syncWithPlatform, 5000);
+}
+
 console.log(`Simulador HOP → ${config.baseUrl}  (Ctrl+C para parar)\n`);
 config.services.forEach(startService);
+syncWithPlatform();

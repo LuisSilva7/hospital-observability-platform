@@ -1,6 +1,18 @@
 spring:
   application:
     name: hospital-observability-platform
+  # SMTP para a ação EMAIL das automações (opcional; sem SMTP_HOST fica desativado)
+  mail:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SMTP_AUTH:true}
+          starttls:
+            enable: ${SMTP_STARTTLS:true}
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/hop}
     username: ${POSTGRES_USER:hop}
@@ -31,3 +43,12 @@ hop:
     redacted-fields: ${LLM_REDACTED_FIELDS:}
   n8n:
     webhook-base-url: ${N8N_WEBHOOK_BASE_URL:http://localhost:5678}
+  retention:
+    # dias a manter logs (logs associados a alertas nunca são apagados); 0 = desativado
+    log-days: ${LOG_RETENTION_DAYS:30}
+  ingest:
+    # máximo de logs por minuto por serviço (token bucket); 0 = desativado
+    rate-limit-per-minute: ${INGEST_RATE_LIMIT_PER_MINUTE:300}
+  mail:
+    # remetente das notificações por email (ação EMAIL das automações)
+    from: ${SMTP_FROM:hop@localhost}

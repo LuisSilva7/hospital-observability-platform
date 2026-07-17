@@ -17,8 +17,9 @@ public interface LlmProvider {
     String model();
 
     /**
-     * Gera a análise estruturada para o prompt dado.
+     * Gera uma resposta estruturada do tipo pedido (structured outputs).
+     * @param outputType classe/record que define o schema da resposta
      * @throws LlmException em caso de falha de rede, da API ou de resposta inválida
      */
-    AnalysisResult analyze(String systemPrompt, String userContent);
+    <T> T generate(String systemPrompt, String userContent, Class<T> outputType);
 }

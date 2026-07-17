@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/useLiveRefresh";
 import {
   Rule,
   RULE_TYPE_INFO,
@@ -25,9 +26,8 @@ export default function RulesPage() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 10_000);
-    return () => clearInterval(interval);
   }, [load]);
+  useLiveRefresh(["rules", "alerts"], load);
 
   const toggle = async (rule: Rule) => {
     await apiFetch(`/api/rules/${rule.id}/enabled`, {

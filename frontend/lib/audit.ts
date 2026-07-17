@@ -29,6 +29,15 @@ export type Settings = {
     configured: boolean;
     webhookBaseUrl: string | null;
   };
+  retention: {
+    enabled: boolean;
+    logDays: number;
+  };
+  email: {
+    configured: boolean;
+    host: string | null;
+    from: string;
+  };
 };
 
 export const ENTITY_LABELS: Record<string, string> = {
@@ -37,6 +46,8 @@ export const ENTITY_LABELS: Record<string, string> = {
   ALERT: "Alerta",
   AUTOMATION: "Automação",
   AI_ANALYSIS: "Análise IA",
+  LOG: "Logs",
+  SIMULATOR: "Simulador",
 };
 
 export const ACTION_LABELS: Record<string, string> = {
@@ -60,6 +71,8 @@ export const ACTION_LABELS: Record<string, string> = {
   AUTOMATION_DISABLED: "Automação desativada",
   AUTOMATION_DELETED: "Automação eliminada",
   AUTOMATION_TESTED: "Automação testada",
-  ACTION_EXECUTED: "Webhook executado",
+  ACTION_EXECUTED: "Ação executada",
   AI_ANALYSIS_REQUESTED: "Análise de IA pedida",
+  LOGS_PURGED: "Logs antigos removidos",
+  SIMULATOR_SCENARIO_CHANGED: "Cenário do simulador alterado",
 };
